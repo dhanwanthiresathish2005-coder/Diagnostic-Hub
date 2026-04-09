@@ -1,0 +1,208 @@
+2024 Issues: 
+
+
+language option(Chinese) not exist
+
+
+1.Welcome page 
+
+
+
+2.Methodology
+
+
+
+3.Thermal Cycling
+
+Click here to see the 150 model types listed as TC Top Performers.
+
+-incorrect navigation
+
+
+4.Damp Heat
+
+Click here to see the 155 model types listed as DH Top Performers
+
+-incorrect navigation
+
+
+
+5.Mechanical Stress Sequence
+
+ see the Test Result Spotlight below
+
+-link not working
+
+
+A case study on why MSS is important, what PV module materials are assessed, and the test procedure can be found here on kiwa.com/pvel. .
+
+-double full stop
+
+
+See MSS Top Performers
+Click here to see the 155 model types listed as MSS Top Performers.
+
+-Missing
+
+
+
+6.Hail stress sequence
+
+( see the Test Result Spotlight below )
+
+-link not working
+
+
+See HSS Top Performers
+Click here to see the 109 model types listed as HSS Top Performers.
+
+-Missing
+
+
+A case study on why HSS is important, what PV module materials are assessed, and the test procedure can be found here on kiwa.com/pvel. .
+
+-double full stop
+
+
+
+7.Potential- Induced Degradation
+
+Pre-stress
+
+-change to upper case
+
+
+See PID Top Performers
+Click here to see the 145 model types listed as PID Top Performers.
+
+-Missing
+
+
+A case study on why PID is important, what PV module materials are assessed, and the test procedure can be found here on kiwa.com/pvel. .
+
+-double fullstop
+
+
+8.LID + LETID
+
+
+See LID + LETID Top Performers
+Click here to see the 345 model types listed as LID + LETID Top Performers.
+
+-Missing
+
+
+A case study on why LID and LETID is important, what PV module materials are assessed, and the test procedure can be found here on kiwa.com/pvel. .
+
+-double fullstop
+
+
+
+9.PAN Performance
+
+
+A case study on why PAN is important, what PV module materials are assessed, and the test procedure for PAN and IAM can be found here on kiwa.com/pvel.
+
+-incorrect  original( the test procedure for PAN and IAM can be found here on kiwa.com/pvel.)
+
+
+
+See PAN Top Performers
+Click here to see the 28 model types listed as PAN Top Performers.
+
+-Missing
+
+
+A case study on why PAN is important, what PV module materials are assessed, and the test procedure can be found here on kiwa.com/pvel. .
+
+-double fullstop
+
+
+10.Ultraviolet Induced Degradation
+
+
+More information on why UVID is important, what PV module materials are assessed, and the test procedure can be found here on
+
+kiwa.com/pvel. .
+
+-too much space between text and link
+- double full stop
+
+
+
+
+11.Backsheet Durability Sequence
+
+
+A case study on why BDS is important, what PV module materials are assessed, and the test procedure can be found here on kiwa.com/pvel. .
+
+-incorrect   original(A the test procedure for BDS can be found here on kiwa.com/pvel.)
+
+
+
+12.Incidence Angle Modifier
+
+
+
+13.Failures
+
+
+4 pictures are not Founded
+
+PQP Failure Statistics graph not Founded
+
+P34% of manufacturers had one or more junction box related failure.        -typing mistake
+
+
+
+14.Top Performers
+
+
+Kiwa PVEL 2024 Top Performer Seal
+PV Module
+Reliability Scorecard
+
+-repeated lines
+
+
+
+-Logos under (Top Performers in 7 Tests   to   Top Performers in 3 Tests)   are not navigating correctly
+
+
+
+Search the 2024 Top Performers
+Search through this year's Top Performers by PQP Test, Manufacturer Name, Module Type, Cell Technology, and more. A checkmark means the module type is a Top Performer in that test. For HSS, the tested hail diameter that resulted in no glass breakage is shown. Visit our Methodology page to read how BOMs are scored and click on each test heading to read more about that test.
+
+Both tested model types and their variants for which the results are representative are included in the list of Top Performers. In some cases, test results were not available at the time of publication.
+
+Search results are listed in alphabetical order by the manufacturers' number of Scorecard appearances. The default search setting shows only the models that have achieved Top Performer status in all categories. Press 'Clear Filter' to reset the search setting.
+
+Kiwa PVEL 2024 Seal
+PV MODULE
+RELIABILITY SCORECARD
+
+
+
+-Again repeated under the table
+
+
+
+
+
+
+15.Download Summary
+
+
+An Executive Summary of the 10th Edition of the PV Module Reliability Scorecard is available in PDF format to provide buyers with a quick reference to the list of top performing manufacturers and key takeaways from Kiwa PVEL's PQP testing.
+
+All historic PVEL Scorecards are also available for download as PDFs, or access the microsites for the 2021, 2022 and 2023 editions.
+
+
+-Missing line  (Submit the form below to access the Executive Summary and past Scorecards.)
+
+
+
+Continue Exploring the 2024
+Scorecard
+
+-Wrong placement

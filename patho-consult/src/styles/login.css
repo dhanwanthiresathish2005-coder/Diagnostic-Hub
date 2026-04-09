@@ -1,0 +1,176 @@
+/* Layout & Purple Theme */
+.login-wrapper {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+}
+
+.brand-bar {
+  background-color: #4a148c;
+  color: white;
+  padding: 15px;
+  text-align: center;
+  font-weight: 600;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+
+.center-content {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.login-card {
+  width: 420px;
+  background: white;
+  padding: 75px 35px;   /* Reduced from 30px/40px */
+  border-radius: 20px;
+  box-shadow: 0 15px 35px rgba(74, 20, 140, 0.2);
+  position: relative;
+  overflow: hidden;
+  margin-Bottom: 90px;
+}
+/* Innovation: Scanning Animation */
+.scan-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(to bottom, transparent, #ce93d8, transparent);
+  box-shadow: 0 0 15px 2px #7b1fa2;
+  z-index: 5;
+  opacity: 0.6;
+  animation: scanning 4s ease-in-out infinite;
+}
+
+@keyframes scanning {
+  0%, 100% { top: 0%; }
+  50% { top: 98%; }
+}
+
+/* Floating Label Fix */
+.input-group {
+  position: relative;
+  margin-bottom: 30px;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 10px 0;
+  font-size: 16px;
+  color: #333;
+  border: none;
+  border-bottom: 2px solid #ce93d8;
+  outline: none;
+  background: transparent;
+  transition: 0.3s;
+}
+
+.input-group label {
+  position: absolute;
+  top: 10px;
+  left: 0;
+  color: #999;
+  pointer-events: none;
+  transition: 0.3s ease all;
+}
+
+/* Keeps label UP if focused OR if there is text inside */
+.input-group input:focus ~ label,
+.input-group input:not(:placeholder-shown) ~ label {
+  top: -18px;
+  font-size: 12px;
+  color: #7b1fa2;
+  font-weight: bold;
+}
+
+.input-group input:focus {
+  border-bottom: 2px solid #7b1fa2;
+}
+
+/* UI Elements */
+.icon-circle {
+  width: 60px;
+  height: 60px;
+  background: #7b1fa2;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto 15px;
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+.brand-name { color: #4a148c; margin-bottom: 5px; text-align: center; }
+.sub-brand { font-size: 0.75rem; color: #9c27b0; letter-spacing: 3px; margin-bottom: 30px; text-align: center; }
+
+.signin-btn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(to right, #7b1fa2, #9c27b0);
+  color: white;
+  border: none;
+  border-radius: 30px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(123, 31, 162, 0.3);
+}
+
+.admin-fade-in { animation: fadeIn 0.5s ease-in; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+.footer-info { font-size: 0.85rem; }
+.error-banner {
+  background-color: #ffebee;
+  color: #c62828;
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 0.85rem;
+  border-left: 4px solid #ef5350;
+  text-align: center;
+  font-weight: 500;
+  animation: fadeIn 0.3s ease;
+}
+
+.signin-btn:disabled {
+  background: #bdbdbd;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.success-banner {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 0.85rem;
+  border-left: 4px solid #4caf50;
+  text-align: center;
+  font-weight: 500;
+}
+
+
+.input-group {
+  position: relative;
+  /* Reduced from 30px to 20px to bring inputs closer together */
+  margin-bottom: 20px; 
+}
+.logo-section {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 10px;   /* Reduced spacing */
+}
+
+.brand-logo-img {
+  width: 340px;
+  max-width: 100%;
+  height: auto;
+}
+
+
+

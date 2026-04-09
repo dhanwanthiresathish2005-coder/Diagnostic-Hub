@@ -1,0 +1,127 @@
+.fd-split-layout {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 20px;
+  padding: 20px;
+  flex: 1;
+}
+
+.fd-panel {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 20px rgba(74, 20, 140, 0.1);
+  border-top: 5px solid #4a148c;
+}
+
+.fd-tabs {
+  display: flex;
+  gap: 10px;
+  border-bottom: 2px solid #f3e5f5;
+  margin-bottom: 20px;
+  overflow-x: auto;
+}
+
+.fd-tabs button {
+  padding: 10px;
+  border: none;
+  background: none;
+  color: #9c27b0;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.fd-tabs button.tab-active {
+  color: #4a148c;
+  border-bottom: 3px solid #4a148c;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.field-group label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: #4a148c;
+  margin-bottom: 5px;
+}
+
+.field-group input, .field-group select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ce93d8;
+  border-radius: 5px;
+}
+
+.reg-date-box {
+  background: #7b1fa2;
+  color: white;
+  padding: 10px;
+  text-align: center;
+  border-radius: 5px;
+  margin: 20px 0;
+  font-size: 0.9rem;
+}
+
+.group-btn {
+  width: 100%;
+  background: #304ffe;
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 5px;
+  margin-top: 10px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.search-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.search-bar input {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.search-action, .today-action {
+  background: #00897b;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 20px;
+  cursor: pointer;
+}
+
+.purple-data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.purple-data-table th {
+  background: #4a148c;
+  color: white;
+  padding: 10px;
+  font-size: 0.8rem;
+}
+
+.back-btn {
+  position: absolute;
+  left: 20px;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  padding: 5px 15px;
+  border-radius: 20px;
+  cursor: pointer;
+}

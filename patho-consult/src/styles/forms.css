@@ -1,0 +1,82 @@
+/* src/styles/forms.css */
+
+.form-container {
+    max-width: 600px;
+    margin: 40px auto;
+    padding: 30px;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+}
+
+.form-container h2 {
+    color: #4a148c;
+    margin-bottom: 25px;
+    text-align: center;
+    font-size: 24px;
+}
+
+.standard-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-row {
+    display: flex;
+    gap: 15px;
+}
+
+.form-row input, .form-row select {
+    flex: 1;
+}
+
+label {
+    font-weight: 600;
+    color: #333;
+    font-size: 14px;
+}
+
+input, select {
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 16px;
+    transition: border-color 0.3s;
+}
+
+input:focus, select:focus {
+    border-color: #4a148c;
+    outline: none;
+}
+
+.submit-btn {
+    background-color: #4a148c;
+    color: white;
+    padding: 14px;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 16px;
+    margin-top: 10px;
+}
+
+.submit-btn:hover {
+    background-color: #7b1fa2;
+}
+
+.cancel-btn {
+    background: transparent;
+    color: #666;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    text-decoration: underline;
+}
