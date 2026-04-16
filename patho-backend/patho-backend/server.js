@@ -5308,6 +5308,26 @@ app.delete('/api/delete-template/:testId', (req, res) => {
     });
 });
 
+//163
+app.get('/api/system-health', async (req, res) => {
+    try {
+        // Check DB connection by running a simple query
+        await db.promise().query('SELECT 1');
+        
+        res.json({
+            database: "Stable",
+            printer: "Connected", // You can add logic here to check printer APIs
+            labApi: "Active"
+        });
+    } catch (err) {
+        res.status(500).json({
+            database: "Down",
+            printer: "Error",
+            labApi: "Inactive"
+        });
+    }
+});
+
 
 
 const PORT = 5000;

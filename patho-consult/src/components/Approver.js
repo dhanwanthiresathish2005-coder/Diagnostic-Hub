@@ -31,39 +31,53 @@ const Approver = () => {
     to: new Date().toISOString().split('T')[0]
   });
 
-const auditData = (incomingData) => {
+
+const auditData = async (incomingData) => {
   if (typeof clearNotifications === 'function') clearNotifications();
 
-  // 1. Criticals
-  const criticalCount = incomingData.filter(i => i.isCritical).length;
-  if (criticalCount > 0) {
-    addNotification(
-      `ALERT: ${criticalCount} Critical Values detected!`, 
-      'critical', 
-      '/approver' 
-    );
-  }
+  const Toast = Swal.mixin({
+    toast: true,
+    position: 'top-end',
+    showConfirmButton: false,
+    timer: 3000,
+    timerProgressBar: true,
+    color: '#fff',
+    // ... logic from your auditData code
+  });
 
-  // 2. Ready (Status 3)
-const readyCount = incomingData.filter(i => i.labStatus == 3).length;
-  if (readyCount > 0) {
-    addNotification(
-      `${readyCount} patients are ready for approval.`, 
-      'success',
-      '/approver' 
-    );
-  }
-
-  // 3. Backlog (Overdue)
-  const delayedCount = incomingData.filter(i => i.isOverdue).length;
+  // --- 1. DELAY ALERTS ---
+  const delayedCount = incomingData.filter(i => i.isOverdue === 1 || i.isOverdue === true).length;
   if (delayedCount > 0) {
-    addNotification(
-      `${delayedCount} reports are past the reporting deadline.`, 
-      'pending',
-      '/approver' 
-    );
+    await Toast.fire({
+      icon: 'warning',
+      background: '#f57f17',
+      title: `${delayedCount} reports are past the deadline.`
+    });
+    // The 'true' at the end makes it SILENT (History only, no popup)
+    addNotification(`${delayedCount} reports overdue.`, 'pending', '/approver', true);
   }
-  
+
+  // --- 2. READY ALERTS ---
+  const readyCount = incomingData.filter(i => i.labStatus == 3).length;
+  if (readyCount > 0) {
+    await Toast.fire({
+      icon: 'success',
+      background: '#2e7d32',
+      title: `${readyCount} patients are ready for approval`
+    });
+    addNotification(`${readyCount} patients ready.`, 'success', '/approver', true);
+  }
+
+  // --- 3. CRITICAL ALERTS ---
+  const criticalCount = incomingData.filter(i => i.isCritical === 1 || i.isCritical === true).length;
+  if (criticalCount > 0) {
+    await Toast.fire({
+      icon: 'error',
+      background: '#b71c1c',
+      title: `ALERT: ${criticalCount} Critical Values detected!`
+    });
+    addNotification(`ALERT: ${criticalCount} Critical Values!`, 'critical', '/approver', true);
+  }
 };
 
 const fetchData = async () => {
@@ -77,7 +91,7 @@ const fetchData = async () => {
       const incomingData = response.data.data;
       setData(incomingData);
       setCurrentPage(1);
-      auditData(incomingData); 
+      await auditData(incomingData); 
     }
   } catch (error) {
     console.error("Error fetching data:", error);
@@ -102,6 +116,7 @@ const fetchData = async () => {
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
+      <Toaster position="top-right" />
    <div style={styles.page}>
       {/* Top Professional Purple Navbar */}
       <Box sx={{ p: 1.5, display: 'flex', justifyContent: 'center', bgcolor: '#4a148c', color: 'white', position: 'relative' }}>

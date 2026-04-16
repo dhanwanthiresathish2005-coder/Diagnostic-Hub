@@ -22,18 +22,23 @@ export const NotificationProvider = ({ children }) => {
     }
   }, [queue, open]);
 
-  // FIXED: Added 'target' parameter here
-  const addNotification = (text, type = 'info', target = null) => {
+  // ADDED: silent parameter to control the Snackbar popup
+  const addNotification = (text, type = 'info', target = null, silent = false) => {
     const newNote = { 
       id: Date.now() + Math.random(), 
       text, 
       type, 
-      target, // <--- Crucial: storing the path for navigation
+      target, 
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
     };
     
+    // Always update history for the Home screen bell icon
     setNotifications(prev => [newNote, ...prev].slice(0, 50));
-    setQueue(prev => [...prev, newNote]);
+    
+    // Only update the queue if NOT silent (this prevents the popup)
+    if (!silent) {
+      setQueue(prev => [...prev, newNote]);
+    }
   };
 
   const handleClose = (event, reason) => {
@@ -43,20 +48,25 @@ export const NotificationProvider = ({ children }) => {
 
   const getAccentColor = (type) => {
     switch(type) {
-      case 'critical': return '#ef4444'; 
-      case 'pending':  return '#4a148c'; 
-      case 'success':  return '#10b981'; 
-      default:         return '#64748b'; 
+      case 'critical': return '#b71c1c'; // Matches SweetAlert Red
+      case 'pending':  return '#f57f17'; // Matches SweetAlert Amber/Orange for Overdue
+      case 'success':  return '#2e7d32'; // Matches SweetAlert Green for Ready
+      default:         return '#4a148c'; // Default Purple theme
     }
   };
 
   const getIcon = (type) => {
     const iconStyle = { fontSize: '22px' };
     switch(type) {
-      case 'critical': return <ErrorOutlineIcon sx={{ ...iconStyle, color: '#ef4444' }} />;
-      case 'pending':  return <WarningAmberIcon sx={{ ...iconStyle, color: '#4a148c' }} />;
-      case 'success':  return <CheckCircleOutlineIcon sx={{ ...iconStyle, color: '#10b981' }} />;
-      default:         return <InfoOutlinedIcon sx={{ ...iconStyle, color: '#64748b' }} />;
+      case 'critical': 
+        return <ErrorOutlineIcon sx={{ ...iconStyle, color: '#b71c1c' }} />;
+      case 'pending':  
+        // Changed to Amber color to match "Past Deadline" warnings
+        return <WarningAmberIcon sx={{ ...iconStyle, color: '#f57f17' }} />;
+      case 'success':  
+        return <CheckCircleOutlineIcon sx={{ ...iconStyle, color: '#2e7d32' }} />;
+      default:         
+        return <InfoOutlinedIcon sx={{ ...iconStyle, color: '#4a148c' }} />;
     }
   };
 
@@ -66,6 +76,7 @@ export const NotificationProvider = ({ children }) => {
       notifications, 
       setNotifications, 
       addNotification, 
+      setQueue,
       clearNotifications: () => setNotifications([]) 
     }}>
       {children}

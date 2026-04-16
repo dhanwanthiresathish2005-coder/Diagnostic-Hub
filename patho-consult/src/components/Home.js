@@ -25,7 +25,6 @@ import AddLocationModal from "./AddLocationModal";
 
 const drawerWidth = 240;
 
-
 const roleOperations = {
   Admin: [
     { sNo: 0, desc: "Create User", page: "Create User", icon: <People fontSize="small"/> },
@@ -105,10 +104,10 @@ function Home() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false); 
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
   const [isSigModalOpen, setIsSigModalOpen] = useState(false);
-  // Line 8: Pull setNotifications from the hook
+  
 const { notifications, setNotifications, clearNotifications } = useNotifications(); 
 
-// Line 12: This function is now correctly linked to the hook's state
+
 const addNotification = useCallback((text, type, target = null) => {
   const newNote = {
     id: Date.now(),
@@ -142,6 +141,70 @@ const showNotificationToast = (message) => {
         icon: 'warning',
         title: message
     });
+};
+
+
+const [systemStatus, setSystemStatus] = useState({
+    database: "Checking...",
+    printer: "Checking...",
+    labApi: "Checking..."
+});
+
+
+const fetchStatus = async () => {
+    try {
+        const response = await fetch('http://localhost:5000/api/system-health');
+        const data = await response.json();
+        setSystemStatus({
+            database: data.database,
+            printer: data.printer,
+            labApi: data.labApi
+        });
+    } catch (error) {
+        setSystemStatus({ database: "Down", printer: "Offline", labApi: "Offline" });
+    }
+};
+
+
+useEffect(() => {
+    fetchStatus(); // Initial fetch
+    const interval = setInterval(fetchStatus, 10000); // Refresh every 10 seconds
+    return () => clearInterval(interval);
+}, []);
+
+// 1. Your existing mixin (keep this where it is)
+const Toast = Swal.mixin({
+  toast: true,
+  position: 'top-end',
+  showConfirmButton: false,
+  timer: 2000,
+  timerProgressBar: true,
+  didOpen: (toast) => {
+    toast.addEventListener('mouseenter', Swal.stopTimer)
+    toast.addEventListener('mouseleave', Swal.resumeTimer)
+  }
+});
+
+// 2. Updated handleManualSync using the 'Toast' variable
+const handleManualSync = async () => {
+    try {
+      // Logic to fetch status
+      await fetchStatus(); 
+
+      // Use the 'Toast' mixin you defined above
+      Toast.fire({
+        icon: 'success',
+        title: 'System Pulse Updated!',
+        background: '#4a148c', // Your purple theme
+        color: '#fff'
+      });
+      
+    } catch (error) {
+      Toast.fire({
+        icon: 'error',
+        title: 'Sync failed. Check connection.'
+      });
+    }
 };
 
 
@@ -667,11 +730,13 @@ return (
                 <Paper sx={{ p: 3, borderRadius: '24px', border: '1px solid #e1bee7', bgcolor: 'white', flexGrow: 1 }}>
                   <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>System Pulse</Typography>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    {[
-                      { label: "Database Sync", status: "Stable", color: "#2e7d32" },
-                      { label: "Printer Cloud", status: "Connected", color: "#2e7d32" },
-                      { label: "Lab API", status: "Active", color: "#2e7d32" }
-                    ].map((pulse, i) => (
+                    
+                      {[
+  { label: "Database Sync", status: systemStatus.database, color: systemStatus.database === "Stable" ? "#2e7d32" : "#d32f2f" },
+  { label: "Printer Cloud", status: systemStatus.printer, color: systemStatus.printer === "Connected" ? "#2e7d32" : "#d32f2f" },
+  { label: "Lab API", status: systemStatus.labApi, color: systemStatus.labApi === "Active" ? "#2e7d32" : "#d32f2f" }
+].map((pulse, i) => (
+
                       <Box key={i} sx={{ p: 1.5, borderRadius: '12px', bgcolor: '#f8f9fa', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <Typography variant="body2" fontWeight="600">{pulse.label}</Typography>
                         <Typography variant="caption" sx={{ px: 1.5, py: 0.5, borderRadius: '20px', bgcolor: pulse.color + '20', color: pulse.color, fontWeight: 'bold' }}>
@@ -683,6 +748,7 @@ return (
                   
                   <Box sx={{ mt: 3 }}>
                     <button 
+                    onClick={handleManualSync}
                       className="innovative-btn" 
                       style={{ 
                         background: 'linear-gradient(90deg, #4a148c, #7b1fa2)', 
