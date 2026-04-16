@@ -7,6 +7,7 @@ import {
 import "../styles/home.css"; 
 import Swal from 'sweetalert2';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
+import dayjs from 'dayjs';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { TextField } from '@mui/material';
  import Tesseract from 'tesseract.js';
@@ -16,9 +17,10 @@ const UploadSignatureModal = ({ isOpen, onClose }) => {
   const [step, setStep] = useState(1);
   const [isScanning, setIsScanning] = useState(false);
   
+  
   const [formData, setFormData] = useState({
     userName: "", firstName: "", lastName: "", gender: "",
-    dob: "", age: "", undergraduateDegree: "", ugUniversity: "",
+    dob: null, age: "", undergraduateDegree: "", ugUniversity: "",
     postgraduateDegree: "", pgUniversity: "", college: "",
     otherDegree: "", registrationNumber: "", designation: "",
     designationCategory: "", designationForReport: "",
@@ -59,7 +61,7 @@ const handleFileChange = async (e) => {
 
     setFile(selectedFile);
     setPreview(URL.createObjectURL(selectedFile));
-    setIsScanning(true); // Start the loading state
+    setIsScanning(true); 
 
     // 2. Visual Feedback
     Swal.fire({
@@ -75,11 +77,7 @@ const handleFileChange = async (e) => {
             'eng',
             { logger: m => console.log(m) }
         );
-
-        // 3. Clean the text
         const cleanText = text.replace(/[^\w\s.,-]/gi, '').replace(/\s+/g, ' ').trim();
-        
-        // 4. Extract Registration Number (4 to 8 digits)
         const regNoMatch = cleanText.match(/\b\d{4,8}\b/); 
         
         // 5. Extract Keywords
@@ -209,6 +207,25 @@ const handleFileChange = async (e) => {
         });
     }
 };
+const handleDateChange = (newValue) => {
+
+    if (newValue && dayjs(newValue).isValid()) {
+        const calculatedAge = dayjs().diff(newValue, 'year');
+        
+        setFormData(prev => ({
+            ...prev,
+            dob: newValue,
+            age: calculatedAge >= 0 ? calculatedAge : 0
+        }));
+    } else {
+        // If the date is cleared or invalid
+        setFormData(prev => ({
+            ...prev,
+            dob: null,
+            age: ""
+        }));
+    }
+};
 
   return (
     <div className="modal-overlay" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(3px)', position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
@@ -300,31 +317,39 @@ const handleFileChange = async (e) => {
                   </select>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '15px' }}>
-                  <label style={{ fontWeight: 'bold', color: '#4a148c', fontSize: '13px' }}>DOB</label>
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                  <DatePicker
-                    
-                    slotProps={{
-                      textField: {
-                        fullWidth: true,
-                        variant: "outlined",
-                        sx: {
-                          '& .MuiOutlinedInput-root': {
-                            borderRadius: '6px',
-                            '& fieldset': { border: '2px solid #dfe6e9' },
-                            '&:hover fieldset': { borderColor: '#4a148c' },
-                          },
-                          '& .MuiInputLabel-root': { fontWeight: '800', color: '#2d3436' }
-                        }
-                      }
-                    }}
-                  />
-                </LocalizationProvider>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '15px' }}>
-                  <label style={{ fontWeight: 'bold', color: '#4a148c', fontSize: '13px' }}>Age</label>
-                  <input type="number" name="age" placeholder="Age" onChange={handleInputChange} />
-                </div>
+  <label style={{ fontWeight: 'bold', color: '#4a148c', fontSize: '13px' }}>DOB</label>
+  <LocalizationProvider dateAdapter={AdapterDayjs}>
+    <DatePicker
+      value={formData.dob} 
+      onChange={handleDateChange} 
+      slotProps={{
+        textField: {
+          fullWidth: true,
+          variant: "outlined",
+          sx: {
+            '& .MuiOutlinedInput-root': {
+              borderRadius: '6px',
+              '& fieldset': { border: '2px solid #dfe6e9' },
+              '&:hover fieldset': { borderColor: '#4a148c' },
+            },
+            '& .MuiInputLabel-root': { fontWeight: '800', color: '#2d3436' }
+          }
+        }
+      }}
+    />
+  </LocalizationProvider>
+</div>
+
+<div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '15px' }}>
+  <label style={{ fontWeight: 'bold', color: '#4a148c', fontSize: '13px' }}>Age</label>
+  <input 
+    type="number" 
+    name="age" 
+    placeholder="Age" 
+    value={formData.age} // Binds to calculated state
+    onChange={handleInputChange} 
+  />
+</div>
               </div>
             </div>
 

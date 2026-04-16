@@ -12,6 +12,8 @@ import Swal from 'sweetalert2';
 import { FilePlus2 } from 'lucide-react';
 import { Settings2 } from 'lucide-react';
 import { FileEdit, Search, Home, Mail, MapPin } from 'lucide-react';
+import { toast, Toaster } from 'react-hot-toast';
+
 
 function AddFreeTextTemplate() {
     const navigate = useNavigate();
@@ -33,6 +35,7 @@ function AddFreeTextTemplate() {
           timer: 2000,
           timerProgressBar: true,
           didOpen: (toast) => {
+            Swal.getContainer().style.zIndex = '9999'; 
             toast.addEventListener('mouseenter', Swal.stopTimer)
             toast.addEventListener('mouseleave', Swal.resumeTimer)
           }
@@ -54,7 +57,6 @@ function AddFreeTextTemplate() {
     };
 
     
-
     const handleComponentChange = (index, field, value) => {
         const updated = [...components];
         updated[index][field] = value;
@@ -98,6 +100,7 @@ function AddFreeTextTemplate() {
 
 const handleSaveDatabase = () => {
     if (!selectedTest) return;
+    
     Swal.fire({
         title: 'Saving Template...',
         didOpen: () => { Swal.showLoading(); },
@@ -133,8 +136,55 @@ const handleSaveDatabase = () => {
     });
 };
 
+const handleDeleteComponent = (idx) => {
+    const updatedComponents = components.filter((_, i) => i !== idx);
+    setComponents(updatedComponents);
+
+    if (updatedComponents.length === 0) {
+        // CASE 1: The entire record is being removed from MariaDB
+        fetch(`http://localhost:5000/api/delete-template/${selectedTest.TestID}`, {
+            method: 'DELETE',
+        })
+        .then(res => res.json())
+        .then(result => {
+            if (result.success) {
+                // Clearer message for total deletion
+                toast.success('Template deleted successfully', { duration: 1500 });
+                setIsEditing(false); 
+            }
+        })
+        .catch(() => toast.error("Failed to delete template from server"));
+    } else {
+        // CASE 2: Just one row is removed, and the JSON string is updated
+        const payload = {
+            testId: selectedTest.TestID,
+            templateName: componentType,
+            content: JSON.stringify(updatedComponents)
+        };
+
+        fetch('http://localhost:5000/api/save-template', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(result => {
+            if (result.success) {
+                // Clearer message for partial removal
+                toast.success('Entry deleted', { duration: 1000 });
+            }
+        })
+        .catch(() => toast.error("Failed to sync deletion"));
+    }
+};
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: '#f3e5f5' }}>
+            <Toaster 
+  position="top-center" 
+  containerStyle={{
+    zIndex: 99999, // Ensure it's above everything else
+  }} 
+/>
             {/* Professional Header */}
             <Box sx={{ 
                 px: 3, py: 1.5, bgcolor: '#4a148c', color: 'white', 
@@ -151,7 +201,6 @@ const handleSaveDatabase = () => {
             </Box>
 
             {/* Navigation Bar */}
-
 <Box 
     sx={{ 
         p: 3, 
@@ -179,7 +228,6 @@ const handleSaveDatabase = () => {
 </Box>
 
             <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center', p: 1, gap: 3 ,  mb: 12}}>
-                
                 {/* LEFT CARD: SELECTION (Shrinks when editing) */}
                 <Paper elevation={6} sx={{ 
                     width: isEditing ? '35%' : '95%', 
@@ -290,9 +338,14 @@ const handleSaveDatabase = () => {
                                                         <TableCell><TextField size="small" fullWidth value={item.name} onChange={(e) => handleComponentChange(idx, 'name', e.target.value)} /></TableCell>
                                                         <TableCell><TextField size="small" fullWidth value={item.range} onChange={(e) => handleComponentChange(idx, 'range', e.target.value)} /></TableCell>
                                                         <TableCell><TextField size="small" fullWidth value={item.unit} onChange={(e) => handleComponentChange(idx, 'unit', e.target.value)} /></TableCell>
-                                                        <TableCell>
-                                                            <IconButton color="error" onClick={() => setComponents(components.filter((_, i) => i !== idx))}><DeleteOutlineIcon /></IconButton>
-                                                        </TableCell>
+                                                        <TableCell align="center"> 
+    <IconButton 
+        color="error" 
+        onClick={() => handleDeleteComponent(idx)}
+    >
+        <DeleteOutlineIcon />
+    </IconButton>
+</TableCell>
                                                     </TableRow>
                                                 ))}
                                             </TableBody>

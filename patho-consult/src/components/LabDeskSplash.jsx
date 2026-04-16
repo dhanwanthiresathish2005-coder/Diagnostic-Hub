@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Typography } from '@mui/material';
-// FIX: Correct import for Lucide React icon
 import { FlaskConical } from 'lucide-react'; 
 
 const LabDeskSplash = () => {

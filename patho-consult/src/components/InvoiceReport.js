@@ -221,8 +221,7 @@ const columns = [
         { field: 'collectedAt', width: 120, renderHeader: () => renderFilterHeader('Collected At') },
         { field: 'clientCode', width: 110, renderHeader: () => renderFilterHeader('Client Code') },
         { field: 'referredBy', width: 120, renderHeader: () => renderFilterHeader('ReferredBy') },
-       {
-    field: 'actions',
+        { field: 'actions',
     width: 200, 
     renderHeader: () => renderFilterHeader('Action'),
     renderCell: (params) => (

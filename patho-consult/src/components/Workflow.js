@@ -46,22 +46,19 @@ const handleChangeRowsPerPage = (event) => {
             boxShadow: '0 2px 10px rgba(0,0,0,0.2)'
         },
         brand: { fontSize: '20px', fontWeight: '800', letterSpacing: '1px' },
-        // Content Container
         container: { padding: '25px 50px' },
         breadcrumb: { color: '#6a1b9a', marginBottom: '20px', fontSize: '14px', cursor: 'pointer' },
-        // Stats Row
         statsRow: { display: 'flex', gap: '20px', marginBottom: '25px' },
         statCard: { 
             flex: 1, background: 'white', padding: '20px', borderRadius: '12px', 
             borderLeft: '5px solid #7b1fa2', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' 
         },
-        // Table Section
         card: { background: 'white', borderRadius: '15px', boxShadow: '0 10px 30px rgba(0,0,0,0.08)', overflow: 'hidden' },
         table: { width: '100%', borderCollapse: 'collapse' },
         thead: { background: '#f8f5fc', borderBottom: '2px solid #eee' },
         th: { padding: '18px', textAlign: 'left', color: '#4a148c', fontSize: '13px', fontWeight: '700' },
         td: { padding: '16px', borderBottom: '1px solid #f0f0f0', fontSize: '14px' },
-        // Add these to your 's' style object
+        
 paginationContainer: { 
     display: 'flex', 
     justifyContent: 'center', 

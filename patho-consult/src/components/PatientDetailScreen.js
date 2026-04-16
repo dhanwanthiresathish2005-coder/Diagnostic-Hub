@@ -59,36 +59,54 @@ function PatientDetailScreen() {
         setSelectedTests(selectedTests.filter(t => t.id !== id));
     };
 
-    const handleGenerateInvoice = async () => {
+const handleGenerateInvoice = async () => {
+    const isCredit = paymentModes['Credit'];
     const paymentModesString = Object.keys(paymentModes).filter(m => paymentModes[m]).join('/');
-    const finalStatus = dueBalance <= 0 ? 'Approved' : 'Pending';
-    const testsWithBillingDetails = selectedTests.map(test => {
-    const type = test.item_type?.toLowerCase();
-    const isProfile = type === 'profile' || (test.test_code && test.test_code.startsWith('PR'));
+    
+    // Status Logic: Credit always remains 'Pending' regardless of math
+    const finalStatus = isCredit ? 'Pending' : (dueBalance <= 0 ? 'Approved' : 'Pending');
 
-    return {
-        PatientID: patient.PatientID,
-        patient_name: patient.patient_name,
-        TestID: isProfile ? null : test.id,
-        profile_id: isProfile ? test.id : null,
-        test_code: test.test_code || test.TestCode, 
-        item_type: type,
-        Amount: test.amount,
-        billing_type: billingType,
-        location_code: selectedLocation,
-        doctor_id: selectedDoctorId,
-        amount_paid: amountPaid, 
-        balance: dueBalance,
-        payment_modes: paymentModesString,
-        Status: finalStatus,
-        client_code: selectedClientId,
-        group_name: patient.group_name || null,
-        insurance_payer: billingType === 'insurance' ? insurancePayer : null,
+    const testsWithBillingDetails = selectedTests.map(test => {
+        const type = test.item_type?.toLowerCase();
+        const isProfile = type === 'profile' || (test.test_code && test.test_code.startsWith('PR'));
+
+        return {
+            PatientID: patient.PatientID,
+            patient_name: patient.patient_name,
+            TestID: isProfile ? null : test.id,
+            profile_id: isProfile ? test.id : null,
+            test_code: test.test_code || test.TestCode, 
+            item_type: type,
+            Amount: test.amount,
+            billing_type: billingType,
+            location_code: selectedLocation,
+            doctor_id: selectedDoctorId,
+            
+            // Waterfall logic fix: If Credit, force paid to 0 and balance to full amount
+            amount_paid: isCredit ? 0 : amountPaid, 
+            balance: isCredit ? test.amount : dueBalance, 
+            
+            payment_modes: paymentModesString,
+            Status: finalStatus,
+            client_code: selectedClientId,
+            group_name: patient.group_name || null,
+            insurance_payer: billingType === 'insurance' ? insurancePayer : null,
+            policy_no: billingType === 'insurance' ? policyNumber : null,
+            hospital_name: billingType === 'out' ? hospitalName : null,
+            collected_at_id: billingType === 'self' ? selectedCollectionId : null,
+            
+            // Bank details (Null if Credit)
+          
+        acc_holder: isCredit ? null : (paymentMeta.holder || null),
+        acc_no: isCredit ? null : (paymentMeta.accNo || null),
+        cheque_no: isCredit ? null : (paymentMeta.chqNo || null),
+        bank_name: isCredit ? null : (paymentMeta.bank || null),
+        trans_id: isCredit ? null : (paymentMeta.txId || null),
+        digital_mode: isCredit ? null : (paymentMeta.mode || null),
+        // Ensure policy_no matches backend record.policy_no
         policy_no: billingType === 'insurance' ? policyNumber : null,
-        hospital_name: billingType === 'out' ? hospitalName : null,
-        collected_at_id: billingType === 'self' ? selectedCollectionId : null
-    };
-});
+        };
+    });
 
     try {
         const response = await fetch('http://localhost:5000/api/save-billing', {
@@ -108,6 +126,8 @@ function PatientDetailScreen() {
         console.error("Save Error:", err);
     }
 };
+
+
     useEffect(() => {
         const loadAllData = async () => {
             try {
@@ -460,15 +480,32 @@ useEffect(() => {
     <div style={styles.paymentSection}>
         <h4 style={styles.sectionTitle}>Billing Summary</h4>
         <div style={styles.paymentModes}>
-            {['Cash', 'Card', 'UPI', 'Credit'].map(m => (
-                <label key={`pay-${m}`} style={styles.checkboxLabel}>
-                    <input 
-                        type="checkbox" 
-                        checked={paymentModes[m]} 
-                        onChange={(e) => setPaymentModes({...paymentModes, [m]: e.target.checked})}
-                    /> {m}
-                </label>
-            ))}
+            {['Cash', 'Card', 'UPI', 'Cheque', 'Credit'].map(m => (
+    <label key={`pay-${m}`} style={styles.checkboxLabel}>
+        <input 
+            type="checkbox" 
+            checked={paymentModes[m]} 
+            onChange={(e) => {
+                const isChecked = e.target.checked;
+                
+                if (m === 'Credit' && isChecked) {
+                    // 1. Set Amount Paid to 0
+                    setAmountPaid(0);
+                    // 2. Clear other payment modes and only keep Credit
+                    setPaymentModes({ Cash: false, Card: false, UPI: false, Cheque: false, Credit: true });
+                } else {
+                    // Normal behavior for other modes
+                    setPaymentModes({...paymentModes, [m]: isChecked, Credit: false});
+                    
+                    if (isChecked && ['Card', 'UPI', 'Cheque'].includes(m)) {
+                        setFormData(prev => ({ ...prev, paymentMode: m === 'UPI' ? 'Digital payment' : m }));
+                        setShowModal(true);
+                    }
+                }
+            }}
+        /> {m}
+    </label>
+))}
         </div>
         
         <div style={styles.amountGrid}>
@@ -477,14 +514,19 @@ useEffect(() => {
                 <input style={styles.amountInput} value={totalAmount.toFixed(2)} readOnly />
             </div>
             <div style={styles.amountBox}>
-                <span style={{color: '#2e7d32'}}>Amount Paid</span>
-                <input 
-                    type="number"
-                    style={{...styles.amountInput, borderColor: '#2e7d32'}} 
-                    value={amountPaid}
-                    onChange={(e) => setAmountPaid(parseFloat(e.target.value) || 0)}
-                />
-            </div>
+    <span style={{color: '#2e7d32'}}>Amount Paid</span>
+    <input 
+        type="number"
+        style={{
+            ...styles.amountInput, 
+            borderColor: '#2e7d32',
+            backgroundColor: paymentModes['Credit'] ? '#f5f5f5' : 'white' 
+        }} 
+        value={amountPaid}
+        readOnly={paymentModes['Credit']} 
+        onChange={(e) => setAmountPaid(parseFloat(e.target.value) || 0)}
+    />
+</div>
             <div style={styles.amountBox}>
                 <span style={{color: '#d32f2f'}}>Due Balance</span>
                 <input style={styles.amountInput} value={(totalAmount - amountPaid).toFixed(2)} readOnly />
@@ -509,7 +551,8 @@ useEffect(() => {
                         <Typography variant="caption">pathoconsult@gmail.com</Typography>
                 </Box>
             </Box>
-            {/* MODAL SECTION - MATCHED TO SCREENSHOTS */}
+            
+            {/* MODAL SECTION */}
             {showModal && (
                 <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
                     <div style={{ backgroundColor: 'white', borderRadius: '4px', width: '400px', overflow: 'hidden', boxShadow: '0 8px 25px rgba(0,0,0,0.4)' }}>
@@ -623,7 +666,7 @@ amountBox: { flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' },
 amountInput: { padding: '12px', borderRadius: '10px', border: '2px solid #eee', fontSize: '18px', fontWeight: 'bold', textAlign: 'right' },
 footer: { display: 'flex', gap: '20px', marginTop: '40px', justifyContent: 'flex-end' },
 submitBtn: { backgroundColor: '#4a148c', color: 'white', padding: '15px 40px', borderRadius: '14px', border: 'none', fontWeight: 'bold', cursor: 'pointer', fontSize: '15px' },
-cancelBtn: { backgroundColor: '#f5f5f5', color: '#888', padding: '15px 30px', borderRadius: '14px', border: 'none', fontWeight: 'bold', cursor: 'pointer' },
+cancelBtn: { backgroundColor: '#4a148c', color: 'white', padding: '15px 30px', borderRadius: '14px', border: 'none', fontWeight: 'bold', cursor: 'pointer' },
 };
 
 export default PatientDetailScreen;

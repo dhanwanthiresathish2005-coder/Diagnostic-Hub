@@ -11,6 +11,7 @@ import { People} from '@mui/icons-material';
 import HomeIcon from '@mui/icons-material/Home';
 import {Search, Home, Mail, MapPin } from 'lucide-react';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
+import dayjs from 'dayjs';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { TextField } from '@mui/material';
 import { TablePagination} from '@mui/material';
@@ -21,15 +22,15 @@ function FrontDesk() {
     const [activeTab, setActiveTab] = useState("Patient Registration");
     const [isGroupOpen, setIsGroupOpen] = useState(false);
     const [currentDateTime, setCurrentDateTime] = useState("");
-    const [metadata, setMetadata] = useState({ titles:[], doctors:[], groups:[], tests:[], profiles:[]});
+    const [metadata, setMetadata] = useState({ titles:[], doctors:[], groups:[], tests:[], profiles:[], locations: []});
     const [patients, setPatients] = useState([]); 
     const [searchTerm, setSearchTerm] = useState("");
     const [availableGroupTests, setAvailableGroupTests] = useState([]);
     const [category, setCategory] = useState(null); 
     const [groups, setGroups] = useState([]); 
-     const { notifications, clearNotifications } = useNotifications();
-     const hasNotified = useRef(false);
-     const { addNotification } = useNotifications();
+    const { notifications, clearNotifications } = useNotifications();
+    const hasNotified = useRef(false);
+    const { addNotification } = useNotifications();
     const STATUS_CONFIG = {
     Approved: { label: 'COMPLETED', color: '#2e7d32' },  
     Pending: { label: 'DUE / PENDING', color: '#d32f2f' }, 
@@ -49,7 +50,6 @@ const Toast = Swal.mixin({
     });
 
 const [filterType, setFilterType] = useState("All"); 
-
 const [isGroupBillingOpen, setIsGroupBillingOpen] = useState(false);
 const [groupList, setGroupList] = useState([]);
 const [showGroupTable, setShowGroupTable] = useState(false);
@@ -74,15 +74,16 @@ const [successModal, setSuccessModal] = useState({
 
     
     const [formData, setFormData] = useState({
-        title_id: '',
-        patient_name: '',
-        gender: '',
-        phone_no: '',
-        email: '',
-        age: '',
-        dob: '',
-        doctor_id: '',
-        door_no: '',
+    title_id: '',
+    patient_name: '',
+    gender: '',
+    phone_no: '',
+    email: '',
+    age: '',
+    dob: '',
+    doctor_id: '',
+    Location: '',
+    door_no: '',
     flat_name: '',
     street_name1: '',
     street_name2: '',
@@ -121,7 +122,6 @@ const [sortConfig, setSortConfig] = useState({ key: 'patient_name', direction: '
 const [columnFilters, setColumnFilters] = useState({ patient_name: '', PatientID: '', gender: '' });
 const [payDueModal, setPayDueModal] = useState({ show: false, patient: null });
 const [collectAmount, setCollectAmount] = useState("");
-
 const [collectedAmount, setCollectedAmount] = useState("");
 const [groupInvoiceModal, setGroupInvoiceModal] = useState({ show: false, patient: null });
 const [groupPaymentModal, setGroupPaymentModal] = useState({ show: false, data: null });
@@ -149,7 +149,6 @@ useEffect(() => {
 
 // --- 1. FILTERING LOGIC (Must be first) ---
 const filteredPatients = patients.filter(p => {
-    // 1. Top-level & Column Filters (Remain the same)
     const matchesSearch = 
         p.patient_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.PatientID.toString().includes(searchTerm) ||
@@ -184,20 +183,26 @@ const handleChangeRowsPerPage = (event) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setCurrentPage(0);
 };
+
+const sortedPatients = React.useMemo(() => {
+    return [...filteredPatients].sort((a, b) => {
+        const aValue = a[sortConfig.key] || "";
+        const bValue = b[sortConfig.key] || "";
+        
+        if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+    });
+}, [filteredPatients, sortConfig]);
+
 const indexOfLastRow = (currentPage + 1) * rowsPerPage;
 const indexOfFirstRow = indexOfLastRow - rowsPerPage;
-const currentRows = filteredPatients.slice(indexOfFirstRow, indexOfLastRow);
-const sortedPatients = [...filteredPatients].sort((a, b) => {
-    const aValue = a[sortConfig.key] || "";
-    const bValue = b[sortConfig.key] || "";
-    
-    if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
-    if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
-    return 0;
-});
+const currentRows = sortedPatients.slice(indexOfFirstRow, indexOfLastRow);
 
-// --- 3. PAGINATION LOGIC (Must be third) ---
+// 4. Update total pages for the UI
 const totalPages = Math.ceil(sortedPatients.length / rowsPerPage);
+
+
 const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -368,11 +373,11 @@ useEffect(() => {
 }, [patients, addNotification]);
 
 
+
 const fetchGroups = async () => {
     try {
         const response = await fetch('http://localhost:5000/api/get-groups'); 
         const data = await response.json();
-        // If your API wraps the array in a 'data' property:
         setGroupList(Array.isArray(data) ? data : data.groups || []);
     } catch (err) {
         console.error("Error fetching groups:", err);
@@ -395,7 +400,7 @@ const handleColumnFilter = (e, column) => {
 
 const handleFilterChange = (e, column) => {
     setColumnFilters({ ...columnFilters, [column]: e.target.value });
-    setCurrentPage(1); // Reset to page 1 when filtering
+    setCurrentPage(1); 
 };
 
     const fetchPatients = async () => {
@@ -414,12 +419,9 @@ const handleSelectPatient = (patient) => {
 
     setFormData({
         ...formData,
-        // 1. Internal DB ID (Crucial for SQL WHERE clauses)
+    
         id: patient.id, 
-        
-        // 2. Display ID (The P-1014 code)
         PatientID: patient.PatientID || patient.id, 
-        
         patient_name: patient.patient_name,
         gender: patient.gender,
         phone_no: patient.phone_no,
@@ -443,13 +445,10 @@ const handleSelectPatient = (patient) => {
 
 const handleQuickPaySubmit = async () => {
     const patientData = payDueModal.patient || {};
-    
-    // 1. DATA EXTRACTION
-    // Since we fixed the backend, recordId will now correctly hold the primary key 'id'
     const recordId = patientData.id; 
     const amountDue = parseFloat(patientData.Amount || 0);
     const previouslyPaid = parseFloat(patientData.amount_paid || 0);
-    const payAmount = parseFloat(collectedAmount); // The amount entered in the input
+    const payAmount = parseFloat(collectedAmount); 
 
     // 2. SAFETY GUARDS
     if (!recordId) {
@@ -479,8 +478,8 @@ const handleQuickPaySubmit = async () => {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                id: recordId,           // Unique Row ID (b.id)
-                amountPaid: payAmount,  // Send ONLY the new payment amount
+                id: recordId,           
+                amountPaid: payAmount,  
                 paymentMode: selectedPaymentMode 
             })
         });
@@ -494,8 +493,6 @@ const handleQuickPaySubmit = async () => {
             // Reset modal and inputs
             setPayDueModal({ show: false, patient: null });
             setCollectedAmount("");
-            
-            // Refresh the patient list to show updated balance/status
             if (typeof fetchPatients === 'function') fetchPatients(); 
         } else {
             Swal.fire("Update Failed", result.error || "Server error", "error");
@@ -507,36 +504,50 @@ const handleQuickPaySubmit = async () => {
     }
 };
 useEffect(() => {
-    // 1. Initial Data Fetching
     const loadAllInitialData = async () => {
         try {
             fetchPatients();
+            
+            // 1. Fetch the External ID and Groups
             const idRes = await fetch('http://localhost:5000/api/next-external-id');
             const idData = await idRes.json();
-            setFormData(prev => ({ ...prev, external_id: idData.nextId }));
+            
             const groupRes = await fetch('http://localhost:5000/api/get-groups');
             const groupData = await groupRes.json();
             const validatedGroups = Array.isArray(groupData) ? groupData : [];
-            setGroupList(validatedGroups);
-            const [metaRes, testRes] = await Promise.all([
+
+            // 2. Fetch Metadata, Tests, AND Locations in parallel
+            const [metaRes, testRes, locRes] = await Promise.all([
                 fetch('http://localhost:5000/api/registration-metadata'),
-                fetch('http://localhost:5000/api/get-lab-tests')
+                fetch('http://localhost:5000/api/get-lab-tests'),
+                fetch('http://localhost:5000/api/get-locations') // <--- ADDED THIS
             ]);
 
             const metaData = await metaRes.json();
             const testData = await testRes.json();
-            const masterTests = Array.isArray(testData) ? testData : testData.data || [];
+            const locData = await locRes.json(); // <--- ADDED THIS
 
-        
-            setMetadata(prev => ({
-                ...prev,
+            const masterTests = Array.isArray(testData) ? testData : testData.data || [];
+            // Assuming your backend returns { success: true, data: [...] }
+            const masterLocations = locData.success ? locData.data : (Array.isArray(locData) ? locData : []);
+
+            // 3. Update Form Data
+            setFormData(prev => ({ 
+                ...prev, 
+                external_id: idData.nextId 
+            }));
+
+            // 4. Update Metadata - INCLUDE ALL KEYS
+            setMetadata({
                 titles: metaData.titles || [],
                 doctors: metaData.doctors || [],
                 groups: validatedGroups,
                 tests: masterTests,            
-                profiles: metaData.profiles || [] 
-            }));
+                profiles: metaData.profiles || [],
+                locations: masterLocations // <--- CRITICAL FIX: Add this line!
+            });
 
+            setGroupList(validatedGroups);
             setTestList(masterTests);
             setDoctors(metaData.doctors || []);
 
@@ -547,11 +558,9 @@ useEffect(() => {
 
     loadAllInitialData();
 
-    // 2. The Dynamic Clock
     const timer = setInterval(() => {
         const now = new Date();
         const formatted = now.toISOString().replace('T', ' ').split('.')[0];
-        
         setCurrentDateTime(formatted);
         setFormData(prev => ({ ...prev, reg_date: formatted }));
     }, 1000);
@@ -946,12 +955,12 @@ const handleSaveGroupInvoice = async () => {
         alert("Server connection failed.");
     }
 };
-    // --- Unified Purple Theme Styles ---
+
     const s = {
-        container: { display: 'flex', flexDirection: 'column', height: '100vh', fontFamily: '"Segoe UI", Roboto, sans-serif', backgroundColor: '#f3e5f5' },
-        header: { backgroundColor: '#4a148c', color: 'white', padding: '0 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '50px', boxShadow: '0 2px 5px rgba(0,0,0,0.2)' },
-        main: { display: 'flex', flex: 1, overflow: 'hidden' },
-        leftPanel: { 
+    container: { display: 'flex', flexDirection: 'column', height: '100vh', fontFamily: '"Segoe UI", Roboto, sans-serif', backgroundColor: '#f3e5f5' },
+    header: { backgroundColor: '#4a148c', color: 'white', padding: '0 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '50px', boxShadow: '0 2px 5px rgba(0,0,0,0.2)' },
+    main: { display: 'flex', flex: 1, overflow: 'hidden' },
+    leftPanel: { 
     width: '50%', 
     height: '809px', 
     backgroundColor: 'white', 
@@ -964,18 +973,18 @@ const handleSaveGroupInvoice = async () => {
     marginTop: '18px', 
     marginLeft: '20px'
 },
-        rightPanel: { width: '50%', padding: '15px', backgroundColor: '#f3e5f5' },
-        tabContainer: { display: 'flex', marginBottom: '15px', borderBottom: '2px solid #4a148c' },
-        tab: (isActive) => ({
+    rightPanel: { width: '50%', padding: '15px', backgroundColor: '#f3e5f5' },
+    tabContainer: { display: 'flex', marginBottom: '15px', borderBottom: '2px solid #4a148c' },
+    tab: (isActive) => ({
             padding: '10px 12px', border: 'none',
             backgroundColor: isActive ? '#4a148c' : 'transparent', 
             color: isActive ? 'white' : '#4a148c',
             cursor: 'pointer', fontSize: '12px', fontWeight: 'bold', transition: '0.3s'
         }),
-        formGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' },
-        fieldGroup: { display: 'flex', flexDirection: 'column' },
-        label: { fontSize: '12px', fontWeight: 'bold', color: '#4a148c', marginBottom: '4px' },
-        input: { 
+    formGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' },
+    fieldGroup: { display: 'flex', flexDirection: 'column' },
+    label: { fontSize: '12px', fontWeight: 'bold', color: '#4a148c', marginBottom: '4px' },
+    input: { 
     padding: '8px', 
     border: '1px solid #ce93d8', 
     borderRadius: '4px', 
@@ -984,18 +993,18 @@ const handleSaveGroupInvoice = async () => {
     backgroundColor: 'white', 
     color: '#333333'           
 },
-        accentBar: { backgroundColor: '#7b1fa2', color: 'white', padding: '8px', textAlign: 'center', fontWeight: 'bold', fontSize: '14px', margin: '20px 0', borderRadius: '4px' },
-        btnPurple: { backgroundColor: '#4a148c', color: 'white', border: 'none', padding: '10px 25px', borderRadius: '25px', cursor: 'pointer', fontWeight: '800', fontSize: '13px' },
-        btnOutline: { backgroundColor: 'transparent', color: '#4a148c', border: '1.5px solid #4a148c', padding: '8px 15px', borderRadius: '20px', cursor: 'pointer', fontSize: '13px', fontWeight: '800' },
-        table: { width: '100%', borderCollapse: 'collapse', marginTop: '0px' },
-        th: { backgroundColor: '#6a1b9a', color: 'white', padding: '10px', fontSize: '13px',fontWeight: '700', textAlign: 'left' },
-        td: { padding: '10px', borderBottom: '1px solid #e1bee7', fontSize: '13px',fontWeight: '700', color: '#333' },
-        footer: { backgroundColor: '#4a148c', color: 'white', padding: '10px', textAlign: 'center', fontSize: '11px' },
-        searchContainerGrid: {
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
-        gap: '15px',
-        marginBottom: '20px'
+    accentBar: { backgroundColor: '#7b1fa2', color: 'white', padding: '8px', textAlign: 'center', fontWeight: 'bold', fontSize: '14px', margin: '20px 0', borderRadius: '4px' },
+    btnPurple: { backgroundColor: '#4a148c', color: 'white', border: 'none', padding: '10px 25px', borderRadius: '25px', cursor: 'pointer', fontWeight: '800', fontSize: '13px' },
+    btnOutline: { backgroundColor: 'transparent', color: '#4a148c', border: '1.5px solid #4a148c', padding: '8px 15px', borderRadius: '20px', cursor: 'pointer', fontSize: '13px', fontWeight: '800' },
+    table: { width: '100%', borderCollapse: 'collapse', marginTop: '0px' },
+    th: { backgroundColor: '#6a1b9a', color: 'white', padding: '10px', fontSize: '13px',fontWeight: '700', textAlign: 'left' },
+    td: { padding: '10px', borderBottom: '1px solid #e1bee7', fontSize: '13px',fontWeight: '700', color: '#333' },
+    footer: { backgroundColor: '#4a148c', color: 'white', padding: '10px', textAlign: 'center', fontSize: '11px' },
+    searchContainerGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
+    gap: '15px',
+    marginBottom: '20px'
     },
     
     searchGrid: {
@@ -1203,6 +1212,21 @@ const renderTabContent = () => {
 <LocalizationProvider dateAdapter={AdapterDayjs}>
   <DatePicker
     label="DATE OF BIRTH"
+    // Value linked to your formData
+    value={formData.dob ? dayjs(formData.dob) : null} 
+    onChange={(newValue) => {
+      if (newValue && newValue.isValid()) {
+        const today = dayjs();
+        const birthDate = dayjs(newValue);
+        const calculatedAge = today.diff(birthDate, 'year');
+
+        setFormData({
+          ...formData,
+          dob: newValue.format('YYYY-MM-DD'), // Saves date as string
+          age: calculatedAge >= 0 ? calculatedAge : 0 // Updates age box
+        });
+      }
+    }}
     slotProps={{
       textField: {
         fullWidth: true,
@@ -1220,15 +1244,21 @@ const renderTabContent = () => {
   />
 </LocalizationProvider>
 
-                    <div style={s.fieldGroup}>
-                        <label style={styles.label}>Age <span style={{color:'red'}}>*</span></label>
-                        <input 
-                            style={styles.input} type="number" placeholder="Years" 
-                            value={formData.age} onFocus={handleFocus} onBlur={handleBlur}
-                            onChange={(e) => setFormData({...formData, age: e.target.value})}
-                            required 
-                        />
-                    </div>
+                    <div style={styles.fieldGroup}>
+    <label style={styles.label}>Age <span style={{color:'red'}}>*</span></label>
+    <input 
+        style={styles.input} 
+        type="number" 
+        placeholder="Years" 
+        // This value is now driven by the DatePicker onChange
+        value={formData.age} 
+        onFocus={handleFocus} 
+        onBlur={handleBlur}
+        onChange={(e) => setFormData({...formData, age: e.target.value})}
+        required 
+    />
+</div>
+
                 </div>
             );
 
@@ -1261,13 +1291,22 @@ const renderTabContent = () => {
                         />
                     </div>
                     <div style={s.fieldGroup}>
-                        <label style={styles.label}>Street Name 2</label>
-                        <input 
-                            style={styles.input} type="text" placeholder="Cross Street" 
-                            value={formData.street_name2} onFocus={handleFocus} onBlur={handleBlur}
-                            onChange={(e) => setFormData({...formData, street_name2: e.target.value})}
-                        />
-                    </div>
+    <label style={styles.label}>Area <span style={{color:'red'}}>*</span></label>
+    <select 
+    name="Location" 
+    style={styles.input} 
+    required 
+    value={formData.Location || ""} 
+    onChange={(e) => setFormData({...formData, Location: e.target.value})} 
+>
+    <option value="">-- Select Center --</option>
+    {metadata.locations.map(l => (
+        <option key={l.LocationID} value={l.LocationID}>
+            {l.LocationName}
+        </option>
+    ))}
+</select>
+</div>
 
                     <div style={s.fieldGroup}>
                         <label style={styles.label}>State</label>
@@ -1747,6 +1786,7 @@ const renderTabContent = () => {
     </Paper>
 )}
 
+
 {isGroupBillingOpen && (
     <div style={s.modalOverlay}>
         <div style={{...s.modalBox, maxWidth: '600px', textAlign: 'left', padding: '30px'}}>
@@ -1842,18 +1882,31 @@ const renderTabContent = () => {
 
         return (
             <button
-                key={type}
-                onClick={() => { setFilterType(type); setCurrentPage(1); }}
+            key={type}
+            onClick={() => { 
+                setFilterType(type); 
+                setCurrentPage(0); // CRITICAL: Reset to first page whenever filter changes
+            }}
                 style={{
-                    position: 'relative',
-                    padding: '8px 20px',
-                    borderRadius: '20px',
-                    border: 'none',
-                    cursor: 'pointer',
-                    backgroundColor: filterType === type ? '#4a148c' : '#c37dd8',
-                    color: filterType === type ? 'white' : '#252323',
-                    fontWeight: 'bold',
-                }}
+    position: 'relative',
+    padding: '8px 20px',
+    borderRadius: '20px',
+    // Change 'none' to a solid border with your specific color
+    border: '1.5px solid #4a148c', 
+    cursor: 'pointer',
+    
+    // Background toggles between Deep Purple and Very Light Purple
+    backgroundColor: filterType === type ? '#4a148c' : '#f3e5f5',
+    
+    // Text toggles between White and your Dark Grey/Purple
+    color: filterType === type ? 'white' : '#4a148c', 
+    
+    fontWeight: 'bold',
+    transition: 'all 0.2s ease', // Smooth transition for professional feel
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px'
+}}
             >
                 {type === 'Approved' ? 'COMPLETED' : type === 'Pending' ? 'DUE / PENDING' : 'ALL PATIENTS'}
                 
@@ -1875,6 +1928,8 @@ const renderTabContent = () => {
                 )}
             </button>
         );
+
+
     })}
 </div>
 
@@ -1941,7 +1996,7 @@ const renderTabContent = () => {
                         <button 
                             style={{ ...s.btnPurple, backgroundColor: '#2e7d32', padding: '6px 12px' }}
                             onClick={(e) => { e.stopPropagation(); navigate('/edit-invoice', { state: { filterID: p.PatientID } }); }}
-                        > 🖨️ Invoice </button>
+                        >  Invoice </button>
                     ) : (
                         <button 
                             style={{ 
@@ -1980,13 +2035,13 @@ const renderTabContent = () => {
     onRowsPerPageChange={handleChangeRowsPerPage}
     rowsPerPageOptions={[5, 10, 25, 50]}
     sx={{
-        backgroundColor: '#f3e5f5', // Light purple background to match your theme
+        backgroundColor: '#f3e5f5', 
         borderTop: '1px solid #d1c4e9',
         color: '#4a148c',
         '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
             fontSize: '12px',
             fontWeight: 'bold',
-            marginTop: '14px' // Alignment fix for the labels
+            marginTop: '14px' 
         },
         '.MuiIconButton-root': {
             color: '#4a148c',
@@ -2006,7 +2061,7 @@ const renderTabContent = () => {
             <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
         </svg> Active Group Registrations</span>
         <button style={s.btnOutline} onClick={() => setShowGroupTable(!showGroupTable)}>
-            {showGroupTable ? "🔼 Hide List" : "🔽 View Groups (" + groupList.length + ")"}
+            {showGroupTable ? "↑ Hide List" : " View Groups ↓ (" + groupList.length + ")"}
         </button>
     </h4>
 
@@ -2080,19 +2135,16 @@ const renderTabContent = () => {
 </div>
 </section>
             </main>
-<Box sx={{ 
-                             mt: 'auto',p: 1, bgcolor: '#4a148c', color: 'rgba(255,255,255,0.8)', 
-                             display: 'flex', justifyContent: 'center', gap: 4, position: 'fixed', bottom: 0, width: '100%'
-                         }}>
-                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                 <MapPin size={14} />
-                                 <Typography variant="caption">Mylapore, Chennai-600 004</Typography>
-                             </Box>
-                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                 <Mail size={14} />
-                                 <Typography variant="caption">pathoconsult@gmail.com</Typography>
-                             </Box>
-                         </Box>
+<Box sx={{ mt: 'auto',p: 1, bgcolor: '#4a148c', color: 'rgba(255,255,255,0.8)',  display: 'flex', justifyContent: 'center', gap: 4, position: 'fixed', bottom: 0, width: '100%'}}>
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+        <MapPin size={14} />
+            <Typography variant="caption">Mylapore, Chennai-600 004</Typography>
+    </Box>
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+    <Mail size={14} />
+        <Typography variant="caption">pathoconsult@gmail.com</Typography>
+    </Box>
+</Box>
             {/* --- SPECIALIZED DECISION MODAL --- */}
 {decisionModal.show && (
     <div style={s.modalOverlay}>
@@ -2287,23 +2339,72 @@ const renderTabContent = () => {
                 <div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '20px' }}>
                         <div>
-                            <label style={s.label}>Consultant Doctor</label>
-                            <select 
-                                style={s.input} 
-                                value={groupPaymentModal.data.doctor_id}
-                                onChange={(e) => setGroupPaymentModal({
-                                    ...groupPaymentModal, 
-                                    data: { ...groupPaymentModal.data, doctor_id: e.target.value }
-                                })}
-                            >
-                                <option value="">-- Select Referring Doctor --</option>
-                                {metadata.doctors.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-                            </select>
-                        </div>
+    <label style={s.label}>Consultant Doctor</label>
+    <select 
+        style={s.input} 
+        value={groupPaymentModal.data.doctor_id || ""}
+        onChange={(e) => {
+            const docId = e.target.value;
+            // Lookup the doctor object
+            const selectedDoc = metadata.doctors.find(d => String(d.id || d.DoctorID) === String(docId));
+            
+            setGroupPaymentModal({
+                ...groupPaymentModal, 
+                data: { 
+                    ...groupPaymentModal.data, 
+                    doctor_id: docId,
+                    // Store the name for the invoice
+                    doctor_name: selectedDoc ? (selectedDoc.DoctorName || selectedDoc.name || selectedDoc.StaffName) : ""
+                }
+            });
+        }}
+    >
+        <option value="">-- Select Referring Doctor --</option>
+        {metadata.doctors && metadata.doctors.map((d, index) => (
+            <option 
+                key={d.id || d.DoctorID || index} 
+                value={d.id || d.DoctorID}
+                style={{color: '#333'}}
+            >
+                {/* Priority check: 
+                   1. DoctorName (Common in SQL)
+                   2. name (Common in JS)
+                   3. StaffName (Common in ERPs)
+                   4. Fallback to ID if all else is missing
+                */}
+                {d.DoctorName || d.name || d.StaffName || `ID: ${d.id || d.DoctorID}`}
+            </option>
+        ))}
+    </select>
+</div>
                         <div>
-                            <label style={s.label}>Service Location</label>
-                            <input style={s.input} placeholder="e.g. Main Lab / OP" />
-                        </div>
+    <label style={s.label}>Service Location</label>
+    <select 
+        style={s.input} 
+        value={groupPaymentModal.data.locationCode || ''} 
+        onChange={(e) => {
+            // Find the selected location object to get both ID and Code if needed
+            const selectedLoc = metadata.locations.find(l => l.LocationCode === e.target.value);
+            
+            setGroupPaymentModal({
+                ...groupPaymentModal,
+                data: { 
+                    ...groupPaymentModal.data, 
+                    locationCode: e.target.value,
+                    // Also updating collected_at_id to keep the numeric ID in sync
+                    collected_at_id: selectedLoc ? selectedLoc.LocationID : null 
+                }
+            });
+        }}
+    >
+        <option value="">-- Select Service Location --</option>
+        {metadata.locations.map(l => (
+            <option key={l.LocationID} value={l.LocationCode}>
+                {l.LocationName} ({l.LocationCode})
+            </option>
+        ))}
+    </select>
+</div>
                     </div>
 
                     <label style={s.label}>Search Tests / Profiles</label>
@@ -2381,55 +2482,93 @@ const renderTabContent = () => {
                 
 <button 
     style={{ ...s.btnPurple, padding: '10px 40px', fontSize: '16px' }}
-onClick={async () => {
-    const billData = groupPaymentModal.data;
+    onClick={async () => {
+        const billData = groupPaymentModal.data;
 
-    // 1. Get the Patient ID safely
-const finalID = billData.id || billData.PatientID || billData.patientid;
+        // 1. Get IDs and Codes safely
+        const finalID = billData.id || billData.PatientID || billData.patientid;
+        
+        // Use the typed code, or fallback to a default/stored terminal code
+        const locationCode = billData.locationCode || localStorage.getItem('activeTerminalCode') || 'GEN-01';
 
-// 2. Find the group data to get the test string
-const currentGroup = groupList.find(g => g.GroupName === billData.group_name);
-const testNames = currentGroup ? currentGroup.ProfileTest : (billData.test_names || "Group Package");
+        // 2. Resolve the test names string for the database
+        const currentGroup = groupList.find(g => g.GroupName === billData.group_name);
+        const testNames = currentGroup ? currentGroup.ProfileTest : (billData.test_names || "Group Package");
 
-if (!finalID) {
-    alert("Error: No Patient ID found.");
-    return;
-}
-
-try {
-    const response = await fetch('http://localhost:5000/api/save-group-billing', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            PatientID: finalID,
-            patient_name: billData.patient_name,
-            doctor_id: billData.doctor_id || 0,
-            amount: billData.total_fee || 0,
-            amount_paid: billData.total_fee || 0,
-            balance: 0,
-            payment_modes: billData.payment_mode || 'Cash',
-            group_name: billData.group_name,
-            client_code: billData.client_code,
-            billing_type: 'group',
-            test_names: testNames,
-            TestID: billData.TestID || billData.test_id || null,
-            profile_id: billData.profile_id || billData.ProfileID || null,
-            collected_at_id: billData.collected_at_id || billData.location_id || null
-        })
-    });
-    
-    // ... rest of your logic
-        const result = await response.json();
-        if (result.success) {
-            alert(`Success! Invoice ${result.invoiceNo} generated.`);
-            setGroupPaymentModal({ show: false, data: {} });
-            if (typeof fetchPatients === 'function') fetchPatients(); 
-            if (typeof fetchBillingHistory === 'function') fetchBillingHistory(); 
+        if (!finalID) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Oops...',
+                text: 'No Patient ID found. Please ensure a patient is selected.',
+                confirmButtonColor: '#4a148c'
+            });
+            return;
         }
-    } catch (err) {
-        alert("Server connection failed.");
-    }
-}}
+
+        // --- Loading State ---
+        Swal.fire({
+            title: 'Generating Invoice',
+            text: 'Processing billing details...',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); }
+        });
+
+        try {
+            const response = await fetch('http://localhost:5000/api/save-group-billing', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    PatientID: finalID,
+                    patient_name: billData.patient_name,
+                    doctor_id: billData.doctor_id || 0,
+                    amount: billData.total_fee || 0,
+                    amount_paid: billData.total_fee || 0,
+                    balance: 0,
+                    payment_modes: billData.payment_mode || 'Cash',
+                    group_name: billData.group_name,
+                    client_code: billData.client_code,
+                    billing_type: 'group',
+                    test_names: testNames,
+                    TestID: billData.TestID || billData.test_id || null,
+                    profile_id: billData.profile_id || billData.ProfileID || null,
+                    collected_at_id: billData.collected_at_id || billData.location_id || null,
+                    
+                    // --- THE KEY ADDITION ---
+                    locationCode: locationCode 
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success!',
+                    text: `Invoice ${result.invoiceNo} generated successfully.`,
+                    confirmButtonColor: '#4a148c',
+                    timer: 3000
+                });
+
+                setGroupPaymentModal({ show: false, data: {} });
+                if (typeof fetchPatients === 'function') fetchPatients(); 
+                if (typeof fetchBillingHistory === 'function') fetchBillingHistory(); 
+            } else {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Billing Failed',
+                    text: result.message || 'Something went wrong on the server.',
+                    confirmButtonColor: '#4a148c'
+                });
+            }
+        } catch (err) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Connection Error',
+                text: 'Server connection failed. Please check your internet.',
+                confirmButtonColor: '#d32f2f'
+            });
+        }
+    }}
 >
     Finalize & Print Invoice
 </button>

@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import axios from 'axios';
 import { useNavigate } from "react-router-dom";
 import {Search,  Mail, MapPin } from 'lucide-react';
 import Swal from 'sweetalert2';
-import { 
-  Box, Drawer, List, ListItemButton, ListItemIcon, 
+import { Box, Drawer, List, ListItemButton, ListItemIcon, 
   ListItemText, Typography, Avatar, Grid, Card, CardContent, 
   IconButton, Badge, Paper, Table, TableBody, 
   TableCell, TableContainer, TableHead, TableRow, 
@@ -88,14 +87,14 @@ const ROLE_PERMISSIONS = {
     "TableView", "Ammend"
   ],
   Pathologist: [
-    "Sample Collect", "Lab View", "Approver ", 
+    "Sample Collect", "Lab View", "Approver ", "PatientDetails", 
     "Ammend", "TableView"
   ],
   Lab: [
-    "FrontDesk", "Lab View", "TableView", "Approver "
+    "FrontDesk","Sample Collect", "Lab View", "Approver ", "Customer Care", "PatientDetails", "TableView", "Ammend"
   ],
   FrontDesk: [
-    "FrontDesk", "PatientDetails", "Customer Care"
+    "FrontDesk", "PatientDetails", "Customer Care","TableView"
   ]
 };
 
@@ -106,13 +105,28 @@ function Home() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false); 
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
   const [isSigModalOpen, setIsSigModalOpen] = useState(false);
-  const { notifications, clearNotifications } = useNotifications();
+  // Line 8: Pull setNotifications from the hook
+const { notifications, setNotifications, clearNotifications } = useNotifications(); 
+
+// Line 12: This function is now correctly linked to the hook's state
+const addNotification = useCallback((text, type, target = null) => {
+  const newNote = {
+    id: Date.now(),
+    text,
+    type,
+    target, 
+    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  };
+  setNotifications(prev => [newNote, ...prev]);
+}, [setNotifications]);
+
   const [patients, setPatients] = useState([]);
   const [seenNotifications, setSeenNotifications] = useState(new Set());
-  const { addNotification } = useNotifications(); 
+  
   const [localNotifications, setLocalNotifications] = useState([]);
-const doctorName = localStorage.getItem('userName');
-const [welcomeAlertShown, setWelcomeAlertShown] = useState(
+  
+  const doctorName = localStorage.getItem('userName');
+  const [welcomeAlertShown, setWelcomeAlertShown] = useState(
     sessionStorage.getItem('welcomeAlertDismissed') === 'true'
 );
 const showNotificationToast = (message) => {
@@ -174,21 +188,18 @@ const PathoLogo = () => (
       
       
       if (roleOperations[storedRole]) {
-        setSelectedRole(storedRole);
+       setSelectedRole(storedRole);
       }
     }
   }, []);
   const markAsRead = async (id) => {
     try {
         await axios.post(`http://localhost:5000/api/notifications/mark-read/${id}`);
-        // Refresh the list after marking as read
         fetchNotifications();
     } catch (err) {
         console.error("Failed to mark notification as read", err);
     }
 };
-  
- 
 
 useEffect(() => {
     fetchNotifications();
@@ -197,22 +208,16 @@ useEffect(() => {
 }, [doctorName]);
 
 
-
-
 const fetchNotifications = async () => {
     try {
         const response = await axios.get(`http://localhost:5000/api/notifications/unread?doctorName=${doctorName}`);
         
         if (response.data.success) {
             setLocalNotifications(response.data.notifications);
-            
             response.data.notifications.forEach(notif => {
-                // Use seenNotifications to prevent duplicate TOASTS in the same session
                 if (!seenNotifications.has(notif.id)) {
                     const displayName = notif.patient_name || `Sample #${notif.sample_id}`;
                     showNotificationToast(`New critical result for ${displayName}`);
-                    
-                    // Mark as seen in UI state immediately
                     setSeenNotifications(prev => new Set(prev).add(notif.id));
                 }
             });
@@ -226,8 +231,6 @@ const fetchNotifications = async () => {
 useEffect(() => {
   const role = localStorage.getItem('userRole');
   const name = localStorage.getItem('userName');
-
-  // Only run if user is Pathologist AND we haven't shown the alert this session
   if (role === 'Pathologist' && !welcomeAlertShown) {
     
     const checkAlerts = async () => {
@@ -237,12 +240,8 @@ useEffect(() => {
         });
 
         if (res.data.success && res.data.notifications.length > 0) {
-          // Immediately mark as shown so even if the component re-renders, 
-          // the API isn't triggered again for the alert.
           setWelcomeAlertShown(true);
-
-          const sampleId = res.data.notifications[0].sample_id; // Using your DB field name
-
+          const sampleId = res.data.notifications[0].sample_id; 
           Swal.fire({
   title: `Welcome, Dr. ${name}`,
   text: `You have ${res.data.notifications.length} unread critical notifications.`,
@@ -253,13 +252,10 @@ useEffect(() => {
   cancelButtonText: 'Close'
 }).then((result) => {
   if (result.isConfirmed) {
-    // Instead of navigating to a broken link, open the notification menu
-    // We target the current anchor element or manually set it
     const btn = document.getElementById('notification-button');
     if (btn) {
-        setAnchorEl(btn); // This opens the menu programmatically
+        setAnchorEl(btn); 
     } else {
-        // Fallback: If there are many, just go to the first one directly
         const firstSample = res.data.notifications[0].sample_id;
         navigate(`/sample-action-screen/${firstSample}`);
     }
@@ -287,14 +283,11 @@ useEffect(() => {
 }, [navigate]);
 
   const handleActionClick = (itemName) => {
-  // 1. Get the current role from your userProfile state
   const userRole = userProfile.role;
 
-  // 2. Check if the role exists in our permissions map and includes this item
   const isAllowed = ROLE_PERMISSIONS[userRole]?.includes(itemName);
 
   if (!isAllowed) {
-    // Optional: Show a professional toast or alert
     console.warn(`Access Denied for role: ${userRole} on item: ${itemName}`);
     alert(`Your account (${userRole}) does not have permission to access ${itemName}.`);
     return;
@@ -413,6 +406,7 @@ const allowedMenuItems = useMemo(() => {
 }, [userProfile.role]);
 
 
+
 return (
     <Box sx={{ display: 'flex', bgcolor: '#f3e5f5', minHeight: '100vh' }}>
       
@@ -511,10 +505,12 @@ return (
   {/* RIGHT ACTIONS - REMAINS UNTOUCHED */}
   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
    <IconButton onClick={handleNotificationClick} id="notification-button" sx={{ color: anchorEl ? '#7b1fa2' : '#666' }}>
-  {/* Change 'notifications.length' to 'localNotifications.length' */}
-  <Badge badgeContent={localNotifications.length} color="error">
-    <Notifications fontSize="small" />
-  </Badge>
+<Badge 
+  badgeContent={localNotifications.length + notifications.length} 
+  color="error"
+>
+  <Notifications fontSize="small" />
+</Badge>
 </IconButton>
     <Divider orientation="vertical" flexItem sx={{ mx: 0.5, height: '24px' }} />
     <Box sx={{ textAlign: 'right', display: { xs: 'none', sm: 'block' } }}>
@@ -791,25 +787,44 @@ return (
           </MenuItem>
         ))}
 
-        {/* SECTION 2: TOAST HISTORY (NON-CRITICAL) */}
-        {notifications.map((note) => (
-          <MenuItem 
-            key={`context-${note.id}`} 
-            onClick={handleNotificationClose}
-            sx={{ py: 1.5, px: 2, borderBottom: '1px solid #f3e5f5' }}
-          >
-            <Box sx={{ display: 'flex', gap: 1.5, width: '100%' }}>
-              <Box sx={{ 
-                width: 10, height: 10, borderRadius: '50%', mt: 0.7, flexShrink: 0,
-                bgcolor: note.type === 'critical' ? '#ef5350' : note.type === 'pending' ? '#ffa726' : '#ba68c8' 
-              }} />
-              <Box>
-                <Typography variant="body2" fontWeight="600" color="#333">{note.text}</Typography>
-                <Typography variant="caption" color="textSecondary">{note.time}</Typography>
-              </Box>
-            </Box>
-          </MenuItem>
-        ))}
+{/* SECTION 2: TOAST HISTORY (NON-CRITICAL) */}
+{notifications.map((note) => (
+  <MenuItem 
+    key={`context-${note.id}`} 
+    onClick={(e) => {
+      // Prevent any parent event bubbling
+      e.stopPropagation(); 
+
+      // 1. DELETE from Section 2
+      if (typeof setNotifications === 'function') {
+        setNotifications(prev => prev.filter(n => n.id !== note.id));
+      } else {
+        console.error("setNotifications is not defined in Home.js context destructuring");
+      }
+
+      // 2. Navigation
+      if (note.target) {
+        navigate(note.target);
+      }
+      
+      handleNotificationClose();
+    }}
+    sx={{ py: 1.5, px: 2, borderBottom: '1px solid #f3e5f5' }}
+  >
+    <Box sx={{ display: 'flex', gap: 1.5, width: '100%' }}>
+      <Box sx={{ 
+        width: 10, height: 10, borderRadius: '50%', mt: 0.7, flexShrink: 0,
+        bgcolor: note.type === 'critical' ? '#ef5350' : note.type === 'pending' ? '#ffa726' : '#ba68c8' 
+      }} />
+      <Box>
+        <Typography variant="body2" fontWeight="600" color="#333">{note.text}</Typography>
+        <Typography variant="caption" color="textSecondary">
+          {note.time} • Click to view and clear
+        </Typography>
+      </Box>
+    </Box>
+  </MenuItem>
+))}
       </>
     )}
   </Box>

@@ -19,8 +19,6 @@ function CreateUser() {
     const [resetData, setResetData] = useState({ username: '', newPassword: '' });
     const [showTable, setShowTable] = useState(false);
     const [users, setUsers] = useState([]);
-
-    // DataGrid Column Definitions
     const columns = [
         { field: 'ID', headerName: 'ID', width: 90 },
         { field: 'Username', headerName: 'User Name', flex: 1, minWidth: 150 },
@@ -56,13 +54,12 @@ function CreateUser() {
     }, []);
 
     useEffect(() => {
-    // Inject custom style to force SweetAlert above the header
     const style = document.createElement('style');
     style.innerHTML = `.swal2-container { z-index: 2000 !important; }`;
     document.head.appendChild(style);
     
     return () => {
-        document.head.removeChild(style); // Cleanup on unmount
+        document.head.removeChild(style); 
     };
 }, []);
 
@@ -80,8 +77,6 @@ function CreateUser() {
 
     const handleSubmit = async (e) => {
     if (e) e.preventDefault();
-    
-    // Validation with SweetAlert
     if (!userData.username || !userData.password || !userData.role) {
         return Swal.fire({
             icon: 'warning',
@@ -115,7 +110,6 @@ function CreateUser() {
         const result = await response.json();
         
         if (result.success) {
-            // SUCCESS ANIMATION
             Swal.fire({
                 icon: 'success',
                 title: 'User Created!',

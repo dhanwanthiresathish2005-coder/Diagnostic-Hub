@@ -6,20 +6,26 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import Swal from 'sweetalert2';
 import HomeIcon from '@mui/icons-material/Home';
 import {Search, Home, Mail, MapPin } from 'lucide-react';
+import { TablePagination} from '@mui/material';
 
 const PatientApprovalDetail = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { patientId } = location.state || { patientId: '6' };
-
   const [results, setResults] = useState([]);
   const [showTrend, setShowTrend] = useState(false);
   const [selectedTest, setSelectedTest] = useState('');
   const [patientInfo, setPatientInfo] = useState({});
   const [isCompleted, setIsCompleted] = useState('Yes');
   const [specialComments, setSpecialComments] = useState('');
-const [historyPoints, setHistoryPoints] = useState([]);
-// Near your other useState hooks
+  const [historyPoints, setHistoryPoints] = useState([]); 
+const [currentPage, setCurrentPage] = useState(1);
+const [entriesPerPage, setEntriesPerPage] = useState(5);
+
+const indexOfLastRecord = currentPage * entriesPerPage;
+const indexOfFirstRecord = indexOfLastRecord - entriesPerPage;
+const currentRecords = results.slice(indexOfFirstRecord, indexOfLastRecord);
+const totalPages = Math.ceil(results.length / entriesPerPage);
 const userRole = localStorage.getItem('userRole');
 
 const handleViewHistory = async (testName) => {
@@ -32,7 +38,6 @@ const handleViewHistory = async (testName) => {
         setHistoryPoints(data.history);
         setShowTrend(true);
       } else {
-        // Styled Alert for No Records
         Swal.fire({
           icon: 'info',
           title: 'No History',
@@ -80,7 +85,6 @@ const handleResultUpdate = (index, field, value) => {
     setResults(updatedResults);
 };
 
-// 2. Email Sending with Swal
   const handleSendMailAction = async () => {
     const email = document.getElementById('emailInput').value;
     if (!email) {
@@ -128,7 +132,6 @@ const handleResultUpdate = (index, field, value) => {
 
   const handleDownloadPDF = async (sampleId) => {
       try {
-          // Show loading feedback
           Toast.fire({ icon: 'info', title: 'Generating PDF...' });
   
           const response = await fetch(`http://localhost:5000/api/generate-report/${sampleId}`);
@@ -143,8 +146,6 @@ const handleResultUpdate = (index, field, value) => {
           link.setAttribute('download', `Report_${sampleId}.pdf`);
           document.body.appendChild(link);
           link.click();
-          
-          // Cleanup
           document.body.removeChild(link);
           window.URL.revokeObjectURL(url);
   
@@ -176,8 +177,6 @@ const finalizeApproval = async () => {
     }
 
     setSelectedPatient(null);
-
-    // 2. Confirmation Dialog
     const result = await Swal.fire({
         title: 'Confirm Final Approval?',
         text: "This will finalize all test results for this patient.",
@@ -275,73 +274,108 @@ const finalizeApproval = async () => {
           </div>
 
           <div style={styles.tableCard}>
-            <div style={styles.tableToolbar}>
-              <span style={styles.tableTitle}>TEST PARAMETERS FOR VALIDATION</span>
+  {/* Header remains same */}
+  <div style={styles.tableToolbar}>
+     <span style={styles.tableTitle}>TEST PARAMETERS FOR VALIDATION</span>
               <div style={styles.toggleGroup}>
                 <span>Test Completed:</span>
-                <label><input type="radio" checked={isCompleted === 'Yes'} onChange={() => setIsCompleted('Yes')} /> Yes</label>
-                <label><input type="radio" checked={isCompleted === 'No'} onChange={() => setIsCompleted('No')} /> No</label>
+                <label style={{ color: 'white', marginRight: '10px', cursor: 'pointer' }}>
+    <input 
+        type="radio" 
+        checked={isCompleted === 'Yes'} 
+        onChange={() => setIsCompleted('Yes')} 
+        style={{ marginRight: '5px' }} 
+    /> 
+    Yes
+</label>
+
+<label style={{ color: 'white', cursor: 'pointer' }}>
+    <input 
+        type="radio" 
+        checked={isCompleted === 'No'} 
+        onChange={() => setIsCompleted('No')} 
+        style={{ marginRight: '5px' }} 
+    /> 
+    No
+</label>
               </div>
             </div>
             
             <div style={styles.tableResponsive}>
-              <table style={styles.table}>
-                <thead>
-                  <tr style={styles.theadRow}>
-                    <th style={styles.th}>Test Details</th>
-                    <th style={styles.th}>Result</th>
-                    <th style={styles.th}>Reference Range</th>
-                    <th style={styles.th}>Unit</th>
-                    <th style={styles.th}>Comment</th>
-                    <th style={styles.th}>History</th>
-                    <th style={styles.th}>Edit</th>
-                    <th style={styles.th}>
-                      <div style={styles.approveHeader}>
-                        <input type="checkbox" style={{marginRight: '5px'}} />
-                        <div style={styles.checkIconSmall}>✓</div>
-                        <span>Approve</span>
-                      </div>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-  {results.map((res, i) => (
-    <tr key={i} style={styles.tr}>
-      <td style={styles.tdName}>{res.name}</td>
-      <td style={styles.td}>
-        {res.val}
-      </td>
-      <td style={styles.td}>{res.range}</td>
-      <td style={styles.td}>{res.unit}</td>
-      <td style={styles.td}>
-        {res.comment || ''}
-      </td>
+    <table style={styles.table}>
+      <thead>
+        <tr style={styles.theadRow}>
+          <th style={styles.th}>Test Details</th>
+          <th style={styles.th}>Result</th>
+          <th style={styles.th}>Reference Range</th>
+          <th style={styles.th}>Unit</th>
+          <th style={styles.th}>Comment</th>
+          <th style={styles.th}>History</th>
+          <th style={styles.th}>Edit</th>
+          <th style={styles.th}>Approve</th>
+        </tr>
+      </thead>
+      <tbody>
+        {currentRecords.map((res, i) => (
+          <tr key={i} style={{...styles.tr, backgroundColor: i % 2 === 0 ? '#fff' : '#fcfaff'}}>
+            <td style={styles.tdName}>{res.name}</td>
+            <td style={styles.td}>{res.val}</td>
+            <td style={styles.td}>{res.range}</td>
+            <td style={styles.td}>{res.unit}</td>
+            <td style={styles.td}>{res.comment || ''}</td>
+            <td style={styles.td}>
+              <span style={styles.historyLink} onClick={() => handleViewHistory(res.name)}>
+                View History
+              </span>
+            </td>
+            <td style={styles.td}><span style={styles.naText}>--NA--</span></td>
+            <td style={styles.td}>
+               <div style={styles.actionCell}>
+                 <input 
+                   type="checkbox" 
+                   checked={res.isApproved || false} 
+                   onChange={(e) => handleResultUpdate(indexOfFirstRecord + i, 'isApproved', e.target.checked)}
+                 />
+                 <div style={styles.checkIcon}>✓</div>
+               </div>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
 
-      <td style={styles.td}>
-        <span style={styles.historyLink} onClick={() => handleViewHistory(res.name)}>
-          View History
-        </span>
-      </td>
-      <td style={styles.td}><span style={styles.naText}>--NA--</span></td>
-
-      
-      <td style={styles.td}>
-         <div style={styles.actionCell}>
-           <input 
-             type="checkbox" 
-             checked={res.isApproved || false} 
-             onChange={(e) => handleResultUpdate(i, 'isApproved', e.target.checked)}
-           />
-           <div style={styles.checkIcon}>✓</div>
-         </div>
-      </td>
-    </tr>
-  ))}
-</tbody>
-              </table>
-            </div>
-
-            <div style={styles.reportButtons}>
+    <TablePagination
+  component="div"
+  count={results.length}
+  page={currentPage - 1} 
+  onPageChange={(event, newPage) => setCurrentPage(newPage + 1)}
+  rowsPerPage={entriesPerPage}
+  onRowsPerPageChange={(event) => {
+    setCurrentPage(1);
+  }}
+  rowsPerPageOptions={[5, 10, 25]} 
+  sx={{
+    borderTop: '1px solid #eee',
+    backgroundColor: '#fff',
+    color: '#4a148c', 
+    '.MuiTablePagination-displayedRows': {
+      fontWeight: '600',
+      fontSize: '13px'
+    },
+    '.MuiTablePagination-selectLabel': {
+      fontSize: '13px',
+      color: '#666'
+    },
+    '.MuiIconButton-root': {
+      color: '#4a148c',
+      '&.Mui-disabled': {
+        color: '#ccc'
+      }
+    }
+  }}
+/>
+  </div>
+    <div style={styles.reportButtons}>
     <button 
         style={styles.provBtn} 
         onClick={() => handleReportAction('provisional')}
@@ -356,7 +390,7 @@ const finalizeApproval = async () => {
     </button>
     
     <button 
-        style={{...styles.finalBtn, backgroundColor: '#2196f3'}} 
+        style={{...styles.finalBtn, backgroundColor: 'linear-gradient(90deg, #4a148c, #7b1fa2)'}} 
         onClick={() => setShowEmailModal(true)}
     >
          Send Mail
@@ -448,29 +482,29 @@ const finalizeApproval = async () => {
 
                     
                     
-                    {selectedPatient.mode === 'final' && (
+                  {selectedPatient.mode === 'final' && (
     <button 
         style={{ 
-            backgroundColor: (userRole === 'Admin') ? '#ccc' : '#4caf50', 
+            backgroundColor: (userRole === 'Lab') ? '#ccc' : '#4caf50', 
             color: 'white', 
             padding: '10px 20px', 
             border: 'none', 
             borderRadius: '4px', 
-            cursor: (userRole === 'Admin') ? 'not-allowed' : 'pointer', 
+            cursor: (userRole === 'Lab') ? 'not-allowed' : 'pointer', 
             fontWeight: 'bold',
-            filter: (userRole === 'Admin') ? 'grayscale(1) opacity(0.6)' : 'none', 
+            filter: (userRole === 'Lab') ? 'grayscale(1) opacity(0.6)' : 'none', 
             transition: '0.3s'
         }}
         onClick={() => {
-            if (userRole === 'Admin') {
-                Swal.fire('Access Denied', 'Only Pathologists or Lab staff can finalize reports.', 'error');
+            if (userRole === 'Lab') {
+                Swal.fire('Access Denied', 'Only Pathologists /Medical Person can finalize reports.', 'error');
                 return;
             }
             finalizeApproval();
         }}
-        disabled={userRole === 'Admin'} 
+        disabled={userRole === 'Lab'} 
     >
-        {userRole === 'Admin' ? 'Approval Restricted' : 'Approve & Close'}
+        {userRole === 'Lab' ? 'Approval Restricted' : 'Approve & Close'}
     </button>
 )}
                     
@@ -506,7 +540,7 @@ const finalizeApproval = async () => {
         </div>
     </div>
 )}
-      {showEmailModal && (
+    {showEmailModal && (
     <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.7)', zIndex: 3000, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
         <div style={{ backgroundColor: 'white', padding: '40px', borderRadius: '8px', width: '450px', textAlign: 'center', boxShadow: '0 10px 25px rgba(0,0,0,0.3)' }}>
             <h2 style={{ color: '#4a148c', marginBottom: '25px', letterSpacing: '2px' }}>PATHO MAIL</h2>
@@ -534,8 +568,8 @@ const finalizeApproval = async () => {
 };
 
 const styles = {
-  pageContainer: { display: 'flex', flexDirection: 'column', minHeight: '100vh', background: '#f5f0f9' },
-  mainWrapper: { flex: '1 0 auto' },
+  
+  
   header: { background: '#4a148c', color: 'white', padding: '12px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
   brand: { display: 'flex', alignItems: 'center', gap: '10px' },
   logoIcon: { background: 'white', color: '#4a148c', width: '28px', height: '28px', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' },
@@ -543,42 +577,266 @@ const styles = {
   navActions: { display: 'flex', alignItems: 'center' },
   adminTag: { fontSize: '12px', marginRight: '15px' },
   logoutBtn: { background: 'none', border: '1px solid white', color: 'white', padding: '3px 12px', borderRadius: '4px', cursor: 'pointer' },
-  mainContent: { padding: '20px' },
-  topRow: { display: 'flex', justifyContent: 'space-between', marginBottom: '15px', alignItems: 'center' },
-  backBtn: { background: 'none', border: 'none', color: '#4a148c', cursor: 'pointer', fontWeight: 'bold' },
   sessionDate: { fontSize: '12px', color: '#666' },
-  infoCard: { background: 'white', borderRadius: '4px', border: '1px solid #7b1fa2', marginBottom: '20px', overflow: 'hidden' },
-  cardHeader: { background: '#4a148c', color: 'white', padding: '8px 15px', fontSize: '13px', fontWeight: 'bold' },
-  gridContainer: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', padding: '15px', gap: '10px' },
-  gridItem: { fontSize: '13px' },
   commentRow: { padding: '10px 15px', borderTop: '1px solid #eee', display: 'flex', alignItems: 'center', gap: '10px' },
   commentInput: { flex: 1, padding: '8px', border: '1px solid #ddd', borderRadius: '4px' },
   boldLabel: { fontWeight: 'bold', fontSize: '12px', color: '#4a148c' },
-  tableCard: { background: 'white', border: '1px solid #7b1fa2', borderRadius: '4px', overflow: 'hidden' },
-  tableToolbar: { padding: '10px 15px', display: 'flex', justifyContent: 'space-between', background: '#f3e5f5' },
-  tableTitle: { fontSize: '13px', fontWeight: 'bold', color: '#4a148c' },
   toggleGroup: { display: 'flex', gap: '15px', fontSize: '12px' },
-  tableResponsive: { overflowX: 'auto' },
-  table: { width: '100%', borderCollapse: 'collapse', minWidth: '900px' },
-  theadRow: { background: '#7b1fa2' },
-  th: { color: 'white', padding: '12px', fontSize: '12px', fontWeight: '500', borderRight: '1px solid #9c27b0' },
-  tr: { borderBottom: '1px solid #eee' },
-  td: { padding: '12px', fontSize: '13px', textAlign: 'center' },
   tdName: { padding: '12px 20px', textAlign: 'left', color: '#4a148c', fontWeight: '600' },
   cellInput: { width: '80%', padding: '5px', border: '1px solid #ddd' },
-  historyLink: { color: '#1565c0', cursor: 'pointer', textDecoration: 'underline' },
-  naText: { color: 'red', fontWeight: 'bold', fontSize: '11px' },
   actionCell: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' },
   approveHeader: { display: 'flex', alignItems: 'center', justifyContent: 'center' },
   checkIconSmall: { background: '#4caf50', color: 'white', width: '15px', height: '15px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', marginRight: '5px' },
-  checkIcon: { background: '#4caf50', color: 'white', width: '20px', height: '20px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' },
-  reportButtons: { padding: '30px', display: 'flex', justifyContent: 'center', gap: '40px' },
-  provBtn: { background: '#9c27b0', color: 'white', border: 'none', padding: '10px 30px', borderRadius: '4px', fontWeight: 'bold' },
-  finalBtn: { background: '#4caf50', color: 'white', border: 'none', padding: '10px 30px', borderRadius: '4px', fontWeight: 'bold' },
   footer: { background: '#4a148c', color: 'white', textAlign: 'center', padding: '15px', fontSize: '14px', flexShrink: 0 },
-  modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 },
-  modalContent: { background: 'white', padding: '20px', borderRadius: '8px', width: '80%', maxWidth: '600px' },
-  modalHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #eee', paddingBottom: '10px' }
+  modalHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #eee', paddingBottom: '10px' },
+  pageContainer: { 
+    display: 'flex', 
+    flexDirection: 'column', 
+    minHeight: '100vh', 
+    background: '#f3e5f5', 
+    fontFamily: '"Inter", "Segoe UI", sans-serif'
+  },
+  mainWrapper: { flex: '1 0 auto', paddingBottom: '80px' }, 
+  
+  mainContent: { maxWidth: '1200px', margin: '0 auto', padding: '24px' },
+  
+  topRow: { 
+    display: 'flex', 
+    justifyContent: 'space-between', 
+    marginBottom: '20px', 
+    alignItems: 'center' 
+  },
+  backBtn: { 
+    background: 'white', 
+    border: '1px solid #e0e0e0', 
+    color: '#4a148c', 
+    padding: '8px 16px', 
+    borderRadius: '8px', 
+    cursor: 'pointer', 
+    fontWeight: '600',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+    transition: 'all 0.2s'
+  },
+
+  // Information Card Styling
+  infoCard: { 
+    background: 'white', 
+    borderRadius: '12px', 
+    boxShadow: '0 4px 20px rgba(0,0,0,0.08)', 
+    marginBottom: '24px', 
+    overflow: 'hidden',
+    border: 'none' 
+  },
+  cardHeader: { 
+    background: 'linear-gradient(90deg, #4a148c, #7b1fa2)', 
+    color: 'white', 
+    padding: '12px 20px', 
+    fontSize: '14px', 
+    fontWeight: '700',
+    letterSpacing: '0.5px',
+    textTransform: 'uppercase'
+  },
+  gridContainer: { 
+    display: 'grid', 
+    gridTemplateColumns: 'repeat(4, 1fr)', 
+    padding: '20px', 
+    gap: '20px',
+    background: '#fff'
+  },
+  gridItem: { 
+    fontSize: '14px', 
+    color: '#181717',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '4px'
+  },
+  label: { 
+    fontSize: '11px', 
+    textTransform: 'uppercase', 
+    color: '#9e9e9e', 
+    fontWeight: '600' 
+  },
+  value: { 
+    fontSize: '14px', 
+    color: '#2c3e50', 
+    fontWeight: '600' 
+  },
+
+  tableToolbar: { 
+    padding: '15px 20px', 
+    display: 'flex', 
+    justifyContent: 'space-between', 
+    alignItems: 'center',
+    background: 'linear-gradient(90deg, #4a148c, #7b1fa2)', // Light purple
+    borderBottom: '1px solid #e1bee7'
+  },
+  tableTitle: { fontSize: '15px', fontWeight: '700', color: 'white' },
+  toggleGroup: { 
+    display: 'flex', 
+    gap: '20px', 
+    fontSize: '13px', 
+    fontWeight: '600',
+    color: '#ffffff' // Changed from #4a148c to white
+},
+  
+  
+  theadRow: { background: '#f8f9fa' },
+  
+  tr: { 
+    borderBottom: '1px solid #f0f0f0',
+    transition: 'background 0.2s'
+  },
+  td: { padding: '15px', fontSize: '14px', textAlign: 'center', color: '#444' },
+  
+  tableCard: {
+    background: 'white',
+    borderRadius: '12px',
+    boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+    overflow: 'hidden',
+    display: 'flex',
+    flexDirection: 'column',
+    maxHeight: '500px' // Sets the grid height
+  },
+  tableResponsive: {
+    overflowY: 'auto', // Enable vertical scroll
+    flex: 1
+  },
+  table: { 
+    width: '100%', 
+    borderCollapse: 'separate', 
+    borderSpacing: 0 
+  },
+  th: { 
+    position: 'sticky', // Keeps header visible while scrolling
+    top: 0,
+    background: '#f8f9fa',
+    color: '#272525', 
+    padding: '15px', 
+    fontSize: '11px', 
+    fontWeight: '700', 
+    textAlign: 'center',
+    textTransform: 'uppercase',
+    borderBottom: '2px solid #eee',
+    zIndex: 10
+  },
+  // Pagination Styles
+  paginationBar: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '12px 20px',
+    background: '#fff',
+    borderTop: '1px solid #eee'
+  },
+  pageBtn: {
+    padding: '6px 12px',
+    margin: '0 4px',
+    border: '1px solid #e1bee7',
+    background: 'white',
+    color: '#4a148c',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontWeight: '600',
+    fontSize: '12px'
+  },
+  activePageBtn: {
+    background: '#4a148c',
+    color: 'white',
+    border: '1px solid #4a148c'
+  },
+
+  
+  historyLink: { 
+    color: '#4a148c', 
+    cursor: 'pointer', 
+    fontWeight: '600',
+    fontSize: '12px',
+    background: '#f3e5f5',
+    padding: '4px 12px',
+    borderRadius: '20px',
+    textDecoration: 'none'
+  },
+  naText: { 
+    color: '#9e9e9e', 
+    fontSize: '12px', 
+    fontStyle: 'italic' 
+  },
+
+  // Action Buttons
+  reportButtons: { 
+    padding: '40px', 
+    display: 'flex', 
+    justifyContent: 'center', 
+    gap: '20px',
+    background: '#fafafa'
+  },
+  provBtn: { 
+    background: 'white', 
+    color: '#9c27b0', 
+    border: '2px solid #9c27b0', 
+    padding: '12px 28px', 
+    borderRadius: '10px', 
+    fontWeight: '700',
+    cursor: 'pointer',
+    transition: 'all 0.3s'
+  },
+  finalBtn: { 
+    background: 'linear-gradient(90deg, #4a148c, #7b1fa2)', 
+    color: 'white', 
+    border: 'none', 
+    padding: '12px 28px', 
+    borderRadius: '10px', 
+    fontWeight: '700',
+    cursor: 'pointer',
+    boxShadow: '0 4px 12px rgba(74, 20, 140, 0.3)',
+    transition: 'all 0.3s'
+  },
+
+  // Modal Styling
+  modalOverlay: { 
+    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
+    background: 'rgba(26, 0, 51, 0.7)', // Dark purple tint overlay
+    display: 'flex', justifyContent: 'center', alignItems: 'center', 
+    zIndex: 2000,
+    backdropFilter: 'blur(4px)'
+  },
+  modalContent: { 
+    background: 'white', 
+    padding: '30px', 
+    borderRadius: '20px', 
+    width: '90%', maxWidth: '700px',
+    boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
+  },
+  checkIcon: { 
+    background: '#4caf50', 
+    color: 'white', 
+    width: '24px', 
+    height: '24px', 
+    borderRadius: '6px', 
+    display: 'flex', 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    fontSize: '14px' 
+  }
 };
 
+
 export default PatientApprovalDetail;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

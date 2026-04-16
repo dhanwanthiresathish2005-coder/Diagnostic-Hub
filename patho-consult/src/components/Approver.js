@@ -14,8 +14,8 @@ import {Search, Home, Mail, MapPin } from 'lucide-react';
 import dayjs from 'dayjs';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-
-
+import toast, { Toaster } from 'react-hot-toast';
+import Swal from 'sweetalert2';
 
 const Approver = () => {
   const navigate = useNavigate();
@@ -23,7 +23,6 @@ const Approver = () => {
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const { addNotification, clearNotifications } = useNotifications();
-  
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage] = useState(10);
 
@@ -32,29 +31,42 @@ const Approver = () => {
     to: new Date().toISOString().split('T')[0]
   });
 
-  const auditData = (incomingData) => {
+const auditData = (incomingData) => {
   if (typeof clearNotifications === 'function') clearNotifications();
 
-  // 1. Check for Criticals (Highest Priority)
+  // 1. Criticals
   const criticalCount = incomingData.filter(i => i.isCritical).length;
   if (criticalCount > 0) {
-    addNotification(`ALERT: ${criticalCount} Critical Values detected!`, 'critical');
+    addNotification(
+      `ALERT: ${criticalCount} Critical Values detected!`, 
+      'critical', 
+      '/approver' 
+    );
   }
 
-  // 2. Check for "Ready" (Standard Workflow)
-  const readyCount = incomingData.filter(i => i.labStatus == 3).length;
+  // 2. Ready (Status 3)
+const readyCount = incomingData.filter(i => i.labStatus == 3).length;
   if (readyCount > 0) {
-    addNotification(`${readyCount} patients are ready for final approval.`, 'success');
+    addNotification(
+      `${readyCount} patients are ready for approval.`, 
+      'success',
+      '/approver' 
+    );
   }
 
-  // 3. Check for Backlog (Efficiency)
+  // 3. Backlog (Overdue)
   const delayedCount = incomingData.filter(i => i.isOverdue).length;
   if (delayedCount > 0) {
-    addNotification(`${delayedCount} reports are past the reporting deadline.`, 'pending');
+    addNotification(
+      `${delayedCount} reports are past the reporting deadline.`, 
+      'pending',
+      '/approver' 
+    );
   }
+  
 };
 
-  const fetchData = async () => {
+const fetchData = async () => {
   setLoading(true);
   try {
     const response = await axios.get(`http://localhost:5000/api/approver-queue`, {
@@ -110,7 +122,7 @@ const Approver = () => {
     mt: 3, 
     px: 98 
 }}>
-    {/* Shield Check Icon - Represents Approval/Authority */}
+    
     <Box sx={{ 
         bgcolor: '#f3e5f5', 
         p: 1, 
@@ -129,6 +141,7 @@ const Approver = () => {
         </Typography>
     </Box>
 </Box>
+
 
       <main style={styles.mainContent}>
         {/* Stats Info */}
@@ -152,7 +165,7 @@ const Approver = () => {
           '& .MuiOutlinedInput-root': {
             borderRadius: '6px',
             backgroundColor: '#fff',
-            '& fieldset': { border: '2px solid #dfe6e9' }, // Matches your custom input style
+            '& fieldset': { border: '2px solid #dfe6e9' },
             '&:hover fieldset': { borderColor: '#4a148c' },
             '&.Mui-focused fieldset': { borderColor: '#4a148c' },
           }
@@ -227,7 +240,6 @@ const Approver = () => {
       key={i} 
       style={{
         ...styles.tr,
-        // High Priority: Critical (Red) > Overdue (Yellow)
         backgroundColor: isCritical ? '#fff5f5' : isDelayed ? '#fffdf0' : 'white',
         borderLeft: isCritical ? '5px solid #d32f2f' : isDelayed ? '5px solid #fbc02d' : '5px solid transparent'
       }}

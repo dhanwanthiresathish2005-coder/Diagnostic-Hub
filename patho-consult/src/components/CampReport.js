@@ -237,7 +237,6 @@ function CampReport() {
                                     </thead>
                                    <tbody>
     {reportData.length > 0 ? reportData.map((row, index) => {
-        // Logic check for Paid vs Due
         const isPaid = parseFloat(row.balance) <= 0;
         const statusText = isPaid ? 'Paid' : 'Due';
         

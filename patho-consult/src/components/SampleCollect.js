@@ -64,7 +64,7 @@ const SampleCollect = () => {
                 body: JSON.stringify({ sampleId, collectedAt: new Date().toISOString() })
             });
             if (response.ok) {
-                fetchSamples(); // Refresh list
+                fetchSamples(); 
                 handleCloseModal();
                 alert(`Sample ${sampleId} marked as Collected.`);
             }
@@ -75,7 +75,6 @@ const SampleCollect = () => {
 
     const handlePrintLabel = (id) => {
         console.log("Printing barcode for:", id);
-        // Integrate with Zebra/TSC printer API or window.print()
         alert(`Printing Barcode for ${id}...`);
     };
 
@@ -161,7 +160,7 @@ const handleSort = useCallback((key) => {
     width: '100%',
     borderCollapse: 'separate',
     borderSpacing: 0,
-    fontSize: '13px', // Professional density
+    fontSize: '13px', 
     color: '#3c4043',
     fontFamily: '"Segoe UI", Roboto, Helvetica, Arial, sans-serif',
   },
@@ -179,12 +178,12 @@ const handleSort = useCallback((key) => {
     transition: 'background 0.2s',
   },
   td: {
-    padding: '8px 15px', // Compressed height for 5-row view
+    padding: '8px 15px', 
     borderBottom: '1px solid #e8eaed',
-    height: '48px', // Fixed height for alignment
+    height: '48px', 
     verticalAlign: 'middle',
   },
-  // Status Pill Styles
+  
   statusPill: (type) => ({
     padding: '4px 10px',
     borderRadius: '12px',
@@ -248,7 +247,7 @@ const handleSort = useCallback((key) => {
   filterLabel: {
     fontSize: '13px',
     fontWeight: '600',
-    color: '#5f6368', // Professional grey
+    color: '#5f6368', 
   },
   dateInput: {
     padding: '6px 10px',
@@ -261,7 +260,7 @@ const handleSort = useCallback((key) => {
   },
   findBtn: {
     padding: '7px 24px',
-    backgroundColor: '#1a73e8', // Primary Blue
+    backgroundColor: '#1a73e8', 
     color: '#fff',
     border: 'none',
     borderRadius: '4px',
@@ -323,7 +322,7 @@ const handleSort = useCallback((key) => {
     display: 'inline-flex',
     alignItems: 'center',
     gap: '12px',
-    background: 'linear-gradient(135deg, #6200ea 0%, #311b92 100%)', // Bright Purple/Indigo Gradient
+    background: 'linear-gradient(135deg, #6200ea 0%, #311b92 100%)', 
     padding: '12px 28px',
     borderRadius: '16px',
     color: '#ffffff',
@@ -380,7 +379,7 @@ const handleSort = useCallback((key) => {
     <div style={{
       width: '10px',
       height: '10px',
-      backgroundColor: '#00e676', // Bright Green
+      backgroundColor: '#00e676', 
       borderRadius: '50%',
       marginLeft: '10px',
       boxShadow: '0 0 10px #00e676',
@@ -403,7 +402,7 @@ const handleSort = useCallback((key) => {
           textField: {
             size: "small",
             sx: {
-              width: '160px', // Compact for filters
+              width: '160px', 
               '& .MuiOutlinedInput-root': {
                 borderRadius: '6px',
                 backgroundColor: '#fff',
@@ -483,7 +482,7 @@ const handleSort = useCallback((key) => {
           <td style={styles.td}>
             <span style={{
               ...styles.statusPill(parseFloat(item.balance) <= 0 ? 'Approved' : 'Pending'),
-              borderRadius: '4px' // Square-ish for payment
+              borderRadius: '4px' 
             }}>
               {parseFloat(item.balance) <= 0 ? 'PAID' : 'UNPAID'}
             </span>
@@ -541,7 +540,7 @@ const handleSort = useCallback((key) => {
     py: 1.5 // Adjust padding for a sleeker look
 }}>
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-        <ScienceIcon sx={{ fontSize: 28 }} /> {/* This is the new icon */}
+        <ScienceIcon sx={{ fontSize: 28 }} /> 
         <Typography variant="h6" sx={{ fontWeight: 500 }}>
             Sample Collection Details
         </Typography>
@@ -668,19 +667,16 @@ const handleSort = useCallback((key) => {
   </DialogContent>
 </Dialog>
 
-      <Box sx={{ 
-                                  mt: 'auto', p: 1.5, bgcolor: '#4a148c', color: 'rgba(255,255,255,0.8)', 
-                                  display: 'flex', justifyContent: 'center', gap: 4, position: 'fixed', bottom: 0, width: '100%'
-                              }}>
-                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                      <MapPin size={14} />
-                                      <Typography variant="caption">Mylapore, Chennai-600 004</Typography>
-                                  </Box>
-                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                      <Mail size={14} />
-                                      <Typography variant="caption">pathoconsult@gmail.com</Typography>
-                                  </Box>
-                              </Box>
+      <Box sx={{ mt: 'auto', p: 1.5, bgcolor: '#4a148c', color: 'rgba(255,255,255,0.8)', display: 'flex', justifyContent: 'center', gap: 4, position: 'fixed', bottom: 0, width: '100%'}}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <MapPin size={14} />
+            <Typography variant="caption">Mylapore, Chennai-600 004</Typography>
+        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+        <Mail size={14} />
+        <Typography variant="caption">pathoconsult@gmail.com</Typography>
+        </Box>
+      </Box>
     </div>
   );
 };

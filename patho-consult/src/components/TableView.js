@@ -5,7 +5,6 @@ import {
     CircularProgress, Modal, Close
 } from '@mui/material';
 import { ClipboardList, Paperclip } from 'lucide-react';
-
 import HomeIcon from '@mui/icons-material/Home';
 import SearchIcon from '@mui/icons-material/Search';
 import {Search, Home, Mail, MapPin } from 'lucide-react';
@@ -15,21 +14,7 @@ import Swal from 'sweetalert2';
 import dayjs from 'dayjs';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-
-
-const modalStyle = {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
-    width: '70%',
-    bgcolor: 'background.paper',
-    boxShadow: 24,
-    p: 0,
-    borderRadius: '8px',
-    overflow: 'hidden'
-};
-
+const modalStyle = { position: 'absolute', top: '50%',left: '50%',transform: 'translate(-50%, -50%)', width: '70%',bgcolor: 'background.paper',boxShadow: 24,p: 0,borderRadius: '8px',overflow: 'hidden'};
 
 function TableView() {
     const navigate = useNavigate();
@@ -40,13 +25,10 @@ function TableView() {
     const [openModal, setOpenModal] = useState(false);
     const [selectedSample, setSelectedSample] = useState(null);
     const [fileData, setFileData] = useState({ wordFiles: [], imageFiles: [] });
-    
     const entriesPerPage = 12;
-
     useEffect(() => {
         fetchPatients();
     }, []);
-
     const fetchPatients = async () => {
         try {
             setLoading(true);
@@ -63,23 +45,17 @@ function TableView() {
 
 const [uploading, setUploading] = useState(false);
 const [selectedFiles, setSelectedFiles] = useState([]);
-
-
 const handleFileChange = (e) => {
     setSelectedFiles(e.target.files);
 };
-
 const onUpload = async () => {
     if (selectedFiles.length === 0) return alert("Please select files first");
-    
     setUploading(true);
     const formData = new FormData();
     formData.append('sampleId', selectedSample); 
-    
     for (let i = 0; i < selectedFiles.length; i++) {
         formData.append('files', selectedFiles[i]);
     }
-
     try {
         const response = await fetch('http://localhost:5000/api/upload-patient-files', {
             method: 'POST',
@@ -99,21 +75,15 @@ const onUpload = async () => {
     }
 };
 
-
 const handleViewFile = (fileName) => {
     const fileUrl = `http://localhost:5000/uploads/patient_files/${selectedSample}/${fileName}`;
     window.open(fileUrl, '_blank'); 
 };
-
-  
-    const handleSampleClick = async (sampleId) => {
+const handleSampleClick = async (sampleId) => {
         if (!sampleId || sampleId === 'N/A') return;
-        
         setSelectedSample(sampleId);
         setOpenModal(true);
-        
         try {
-            
             const response = await fetch(`http://localhost:5000/api/patient-files/${sampleId}`);
             const data = await response.json();
             if (data.success) {
@@ -125,39 +95,31 @@ const handleViewFile = (fileName) => {
         }
     };
 
-    const handleClose = () => {
+const handleClose = () => {
         setOpenModal(false);
         setFileData({ wordFiles: [], imageFiles: [] });
-    };
-
+};
 
 const safeCodes = Array.isArray(codes) ? codes : [];
 const filteredCodes = safeCodes.filter((row) => {
     if (!dateRange.from && !dateRange.to) return true;
-
     const regDate = new Date(row.RegDate);
     const fromDate = dateRange.from ? new Date(dateRange.from) : null;
     const toDate = dateRange.to ? new Date(dateRange.to) : null;
-
     regDate.setHours(0, 0, 0, 0);
     if (fromDate) fromDate.setHours(0, 0, 0, 0);
     if (toDate) toDate.setHours(0, 0, 0, 0);
-
     if (fromDate && toDate) return regDate >= fromDate && regDate <= toDate;
     if (fromDate) return regDate >= fromDate;
     if (toDate) return regDate <= toDate;
     return true;
 });
-
-
 const indexOfLastEntry = currentPage * entriesPerPage;
 const indexOfFirstEntry = indexOfLastEntry - entriesPerPage;
 const currentEntries = filteredCodes.slice(indexOfFirstEntry, indexOfLastEntry);
 const totalPages = Math.ceil(filteredCodes.length / entriesPerPage);
 
-    
-
-    return (
+return (
         <LocalizationProvider dateAdapter={AdapterDayjs}>
         <Box sx={{ bgcolor: '#f3e5f5', minHeight: '100vh', pb: 10 }}>
             {/* Header */}
@@ -202,8 +164,8 @@ const totalPages = Math.ceil(filteredCodes.length / entriesPerPage);
     </Box>
 </Box>
 
-            <Paper sx={{ width: '90%', margin: '50px auto', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }}>
-                <Box sx={{ p: 3, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 3, flexWrap: 'wrap' }}>
+<Paper sx={{ width: '90%', margin: '50px auto', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }}>
+    <Box sx={{ p: 3, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 3, flexWrap: 'wrap' }}>
     {/* From Date Group */}
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
         <Typography variant="body2" fontWeight="800" sx={{ color: '#4a148c', textTransform: 'uppercase' }}>
@@ -354,7 +316,6 @@ const totalPages = Math.ceil(filteredCodes.length / entriesPerPage);
         <CloseIcon fontSize="small" />
     </IconButton>
 </Box>
-
         <Box sx={{ p: 2 }}>
             <Box sx={{ 
                 mb: 3, p: 1, 
@@ -405,9 +366,9 @@ const totalPages = Math.ceil(filteredCodes.length / entriesPerPage);
         Open
     </Button>
 </TableCell>
-                            </TableRow>
-                        )) : (
-                            <TableRow><TableCell colSpan={2} align="center" sx={{ fontSize: '11px', py: 2 }}>No word files found</TableCell></TableRow>
+    </TableRow>
+    )) : (
+    <TableRow><TableCell colSpan={2} align="center" sx={{ fontSize: '11px', py: 2 }}>No word files found</TableCell></TableRow>
                         )}
                     </TableBody>
                 </Table>
@@ -443,21 +404,17 @@ const totalPages = Math.ceil(filteredCodes.length / entriesPerPage);
         </Box>
     </Box>
 </Modal>
-
             {/* Footer */}
-            <Box sx={{ 
-                                        mt: 'auto', p: 1.5, bgcolor: '#4a148c', color: 'rgba(255,255,255,0.8)', 
-                                        display: 'flex', justifyContent: 'center', gap: 4, position: 'fixed', bottom: 0, width: '100%'
-                                    }}>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                            <MapPin size={14} />
-                                            <Typography variant="caption">Mylapore, Chennai-600 004</Typography>
-                                        </Box>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                            <Mail size={14} />
-                                            <Typography variant="caption">pathoconsult@gmail.com</Typography>
-                                        </Box>
-                                    </Box>
+            <Box sx={{  mt: 'auto', p: 1.5, bgcolor: '#4a148c', color: 'rgba(255,255,255,0.8)',  display: 'flex', justifyContent: 'center', gap: 4, position: 'fixed', bottom: 0, width: '100%' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <MapPin size={14} />
+                        <Typography variant="caption">Mylapore, Chennai-600 004</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Mail size={14} />
+                    <Typography variant="caption">pathoconsult@gmail.com</Typography>
+                </Box>
+            </Box>
 
         </Box>
         </LocalizationProvider>

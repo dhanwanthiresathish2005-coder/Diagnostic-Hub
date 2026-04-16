@@ -10,23 +10,10 @@ import { Tooltip, Button } from '@mui/material';
 import dayjs from 'dayjs';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { 
-    AccessTime as TimeIcon, 
-    Description as ReportIcon, 
-    CheckCircle as DoneIcon, 
-    Email as MailIcon, 
-    History as HistoryIcon,
-    Save as SaveIcon,
-    FactCheck as ApprovedIcon,
-    AssignmentTurnedIn as ConfirmedIcon,
-    Print as PrintIcon,
-    HourglassEmpty as PendingIcon
+import { AccessTime as TimeIcon, Description as ReportIcon,CheckCircle as DoneIcon,Email as MailIcon, History as HistoryIcon,Save as SaveIcon,FactCheck as ApprovedIcon,AssignmentTurnedIn as ConfirmedIcon, Print as PrintIcon,HourglassEmpty as PendingIcon
 } from '@mui/icons-material';
 import Swal from 'sweetalert2';
 import {Search, Home, Mail, MapPin } from 'lucide-react';
-
-
-
 
 function CustomerCare() {
     const navigate = useNavigate();
@@ -53,7 +40,6 @@ function CustomerCare() {
             } else if (result.data.records.length > 0) {
                 setSelectedGraphTest(result.data.records[0].testName);
             }
-            
             setShowHistoryModal(true);
         }
     } catch (error) {
@@ -65,14 +51,10 @@ function CustomerCare() {
 const handleDownloadPDF = async (sampleId) => {
     try {
         Toast.fire({ icon: 'info', title: 'Generating PDF...' });
-
         const response = await fetch(`http://localhost:5000/api/generate-report/${sampleId}?logo=${withLogo}`);
-        
         if (!response.ok) throw new Error("PDF generation failed");
-
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
-        
         const link = document.createElement('a');
         link.href = url;
         link.setAttribute('download', `Report_${sampleId}.pdf`);
@@ -113,8 +95,6 @@ const Toast = Swal.mixin({
   timerProgressBar: true,
 });
     
-    
-
     const logPatientActivity = async (sampleId, actionType) => {
     if (!sampleId || sampleId === 'N/A') return;
     try {
@@ -157,7 +137,6 @@ const handleSendMail = async () => {
     }
 
     try {
-        // Show a "Loading" state so the user knows the mail is being processed
         Swal.fire({
             title: 'Sending Email...',
             text: 'Please wait while we process the report.',
@@ -243,7 +222,7 @@ const handleSendMail = async () => {
     flexDirection: 'column',
     alignItems: 'center', 
     mt: 4, 
-    mb: -3 // Adjusted spacing to look better above your content
+    mb: -3 
 }}>
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
         {/* Purple Badge Wrapper */}
@@ -256,7 +235,6 @@ const handleSendMail = async () => {
         }}>
             <Headset size={28} color="white" strokeWidth={2.5} />
         </Box>
-
         <Box>
             <Typography variant="h5" sx={{ color: '#4a148c', fontWeight: 900, letterSpacing: '0.5px', lineHeight: 1.1 }}>
                 CUSTOMER CARE
@@ -268,7 +246,7 @@ const handleSendMail = async () => {
     </Box>
 </Box>
 
-            <main style={{ padding: '20px', flex: 1 }}>
+<main style={{ padding: '20px', flex: 1 }}>
                 {/* Search Panel */}
 <Box sx={{ 
     maxWidth: '800px', 
@@ -352,7 +330,6 @@ const handleSendMail = async () => {
         Search
     </button>
 </Box>
-
                 
 {(() => {
     const columns = [
@@ -389,8 +366,7 @@ const handleSendMail = async () => {
     { field: 'test_pending_approval', headerName: 'Pending Appr.', width: 120, align: 'center' },
     { field: 'sample_id', headerName: 'Sample ID', width: 130 },
     { field: 'invoice_no', headerName: 'Invoice No', width: 120 },
-    { 
-        field: 'invoice_date', 
+    { field: 'invoice_date', 
         headerName: 'Invoice Date', 
         width: 150,
         renderCell: (p) => (
@@ -399,9 +375,7 @@ const handleSendMail = async () => {
             </span>
         )
     },
-
-    { 
-        field: 'last_print_date', 
+    { field: 'last_print_date', 
         headerName: 'Last Print', 
         width: 160,
         renderCell: (p) => p.value ? (
@@ -424,8 +398,7 @@ const handleSendMail = async () => {
         ) : <span style={{color: '#ccc', fontStyle: 'italic'}}>Not Sent</span>
     },
     { field: 'total_emails_sent', headerName: 'Emails', width: 80, align: 'center' },
-    { 
-        field: 'test_completed', 
+    { field: 'test_completed', 
         headerName: 'Completed', 
         width: 120, 
         renderCell: (p) => {
@@ -443,8 +416,7 @@ const handleSendMail = async () => {
             );
         }
     },
-    { 
-        field: 'actions', 
+    { field: 'actions', 
         headerName: 'Action', 
         width: 220, 
         sortable: false,
@@ -600,10 +572,7 @@ const handleSendMail = async () => {
 >
     Generate Report
 </button>
-                    <button 
-                        style={{ padding: '10px 20px', border: '1px solid #ccc', borderRadius: '4px', cursor: 'pointer', backgroundColor: '#f9f9f9' }}
-                        onClick={() => setShowEmailModal(true)}
-                    >
+<button  style={{ padding: '10px 20px', border: '1px solid #ccc', borderRadius: '4px', cursor: 'pointer', backgroundColor: '#f9f9f9' }} onClick={() => setShowEmailModal(true)} >
                         Send Mail
                     </button>
                    <label style={{ fontSize: '14px', marginLeft: '10px', cursor: 'pointer' }}>
@@ -646,8 +615,7 @@ const handleSendMail = async () => {
         Download Official PDF
     </Button>
 </div>
-
-        <div style={{ textAlign: 'center', marginBottom: '30px', borderBottom: '2px solid #eee', paddingBottom: '10px' }}>
+<div style={{ textAlign: 'center', marginBottom: '30px', borderBottom: '2px solid #eee', paddingBottom: '10px' }}>
             <h3 style={{ margin: 0, textTransform: 'uppercase', letterSpacing: '1px' }}>
                 Microbiology & Clinical Pathology Report
             </h3>
@@ -709,9 +677,6 @@ const handleSendMail = async () => {
                 </p>
              </div>
         )}
-
-        
-
         <div style={{ textAlign: 'center', marginTop: '40px' }}>
             <p style={{ color: '#aaa', fontStyle: 'italic', fontSize: '12px' }}>--- End of Report ---</p>
         </div>
@@ -743,7 +708,6 @@ const handleSendMail = async () => {
         </div>
     </div>
 )}
-
 {/* --- PATHO MAIL MODAL --- */}
 {showEmailModal && selectedPatient && (
     <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'linear-gradient(to right, #471f61, #70598d)', zIndex: 3000, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
@@ -829,7 +793,7 @@ records={historyData.records.filter(r =>
                     />
                 </div>
 
-                {/* History Table - Zebra Striping Style */}
+                {/* History Table-Zebra Striping Style */}
                 <div style={{ borderRadius: '8px', overflow: 'hidden', border: '1px solid #e1bee7' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
                         <thead>
@@ -885,7 +849,7 @@ records={historyData.records.filter(r =>
     </div>
 )}           </main>
 
-           {/* Footer */}
+           {/*Footer*/}
                        <Box sx={{ mt: 'auto', p: 1.5, bgcolor: '#4a148c', color: 'rgba(255,255,255,0.8)', display: 'flex', justifyContent: 'center', gap: 4, position: 'fixed', bottom: 0, width: '100%'}}>
                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                                <MapPin size={14} />

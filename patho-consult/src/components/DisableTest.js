@@ -177,13 +177,10 @@ const DisableTest = () => {
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
         {/* Using a green or blue-ish color often denotes "Active" */}
         <FlaskConical size={18} color="#2e7d32" strokeWidth={2.5} />
-        
         <Typography fontWeight="bold">
             Active Test List
         </Typography>
     </Box>
-
-    {/* You can place a Badge or Count here on the right side */}
 </Box>
 
                     <DataGrid
@@ -211,10 +208,10 @@ const DisableTest = () => {
         fontWeight: 'bold',
         cursor: 'pointer',
         textDecoration: 'underline',
-        display: 'flex',           // Added for icon alignment
-        alignItems: 'center',       // Vertical center
-        justifyContent: 'center',  // Horizontal center
-        gap: 1                     // Space between icon and text
+        display: 'flex',           
+        alignItems: 'center',       
+        justifyContent: 'center',  
+        gap: 1                     
     }}
 >
     {showDisabled ? (

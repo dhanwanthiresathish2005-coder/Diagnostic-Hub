@@ -4,6 +4,7 @@ import {
     TableCell, TableContainer, TableHead, TableRow, Paper, Pagination, 
     CircularProgress, Chip
 } from '@mui/material';
+import Swal from 'sweetalert2';
 import HomeIcon from '@mui/icons-material/Home';
 import { FileEdit, Search, Home, Mail, MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -18,11 +19,8 @@ function Ammend() {
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
     const [dateRange, setDateRange] = useState({ from: '', to: '' });
-    
     const entriesPerPage = 12;
-
     useEffect(() => { fetchPatients(); }, []);
-
     const fetchPatients = async () => {
         try {
             setLoading(true);
@@ -80,9 +78,6 @@ function Ammend() {
                         <HomeIcon fontSize="large" />
                     </IconButton>
             </Box>
-
-
-            
 
             {/* Page Title & Search Section */}
             <Box sx={{ p: 4, maxWidth: '1600px', mx: 'auto', width: '100%' }}>

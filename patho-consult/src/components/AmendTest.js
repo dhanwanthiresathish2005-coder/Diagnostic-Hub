@@ -102,11 +102,10 @@ const handleChangeRowsPerPage = (event) => {
             const data = await response.json();
             
             if (data.success) {
-                // 1. Instantly remove from UI
                 setTests(prevTests => prevTests.filter(test => test.id !== testId));
 
                 Toast.fire({ icon: 'success', title: 'Test deleted from database' });
-                
+    
                 fetchData(); 
             } else {
                 throw new Error(data.message);
@@ -263,8 +262,6 @@ const handleChangeRowsPerPage = (event) => {
     </Box>
 
     <Divider />
-
-    {/* Table Section */}
     {/* Table Section */}
 <TableContainer sx={{ height: '450px', overflowY: 'auto', bgcolor: 'white' }}>
     <Table stickyHeader>
@@ -292,6 +289,7 @@ const handleChangeRowsPerPage = (event) => {
                                 variant="outlined" 
                                 size="small"
                                 value={comp.result || ""}
+                                InputProps={{ readOnly: true, }}
                                 onChange={(e) => handleResultChange(comp.testId, index, e.target.value)}
                                 sx={{ 
                                     '& .MuiInputBase-input': { fontSize: '14px', py: 1, fontWeight: 'bold' },
@@ -336,8 +334,7 @@ const handleChangeRowsPerPage = (event) => {
             fontWeight: 'bold',
             color: '#4a148c'
         }
-    }}
-/>
+    }}/>
 
     {/* Footer Actions */}
     <Box sx={{ p: 3, display: 'flex', justifyContent: 'flex-end', gap: 2, bgcolor: '#f8f9fa', borderTop: '1px solid #e2e8f0' }}>
@@ -368,7 +365,6 @@ const handleChangeRowsPerPage = (event) => {
         </Button>
     </Box>
 </Paper>
-
             {/* Footer */}
             <Box sx={{ 
                 mt: 'auto', p: 1.5, bgcolor: '#4a148c', color: 'rgba(255,255,255,0.8)', 
@@ -379,7 +375,7 @@ const handleChangeRowsPerPage = (event) => {
                     <Typography variant="caption">Mylapore, Chennai-600 004</Typography>
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <Mail size={14} />
+                    <Mail size={14}/>
                     <Typography variant="caption">pathoconsult@gmail.com</Typography>
                 </Box>
             </Box>

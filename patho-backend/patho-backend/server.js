@@ -619,7 +619,7 @@ app.get('/api/get-locations', (req, res) => {
   // Use 'LocationID' if that is your PK, or just 'id' depending on your schema
   const sql = "SELECT LocationID, LocationCode, LocationName, IsActive FROM locations ORDER BY LocationID ASC";
   
-  db.execute(sql, (err, results) => {
+  db.query(sql, (err, results) => {
     if (err) {
       console.error("Fetch error:", err);
       return res.status(500).json({ success: false, message: "Error fetching locations" });
@@ -664,22 +664,22 @@ app.post('/api/register-pathologist', upload.single('signature'), async (req, re
     if (req.file) {
         try {
             const processedFilename = `processed-${Date.now()}-${req.file.filename}`;
-            const processedPath = path.join('uploads', processedFilename); // Ensure this matches your static folder
+            const processedPath = path.join('uploads', processedFilename); 
 
             await sharp(req.file.path)
-                .grayscale()            // Convert to Black & White
-                .normalize()            // Enhance contrast
-                .threshold(180)         // Remove background "noise" (makes paper pure white)
-                .resize(400, 200, {     // Standardize signature size
+                .grayscale()            
+                .normalize()            
+                .threshold(180)         
+                .resize(400, 200, {     
                     fit: 'inside',
                     withoutEnlargement: true
                 })
                 .toFile(processedPath);
 
-            // Delete the original noisy raw file to save storage
+            
             fs.unlinkSync(req.file.path);
             
-            // Update the path to the clean version for DB entry
+            
             signaturePath = processedPath.replace(/\\/g, '/'); 
         } catch (sharpErr) {
             console.error("Sharp processing failed, using original:", sharpErr);
@@ -1711,8 +1711,8 @@ app.post('/api/register-patient', (req, res) => {
         door_no, flat_name, street_name1, street_name2, city, state, pincode, country,
         phone_home, locality, marital_status, notify_sms, notify_email, 
         group_name, social_relationship, social_name, employment_status, employer_name, 
-        income_group, GroupID
-    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
+        income_group, GroupID,Location
+    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
 
     const values = [
         d.title_id, d.patient_name, d.age, d.gender, d.phone_no, d.email, d.dob || null, new Date(), 
@@ -1721,7 +1721,9 @@ app.post('/api/register-patient', (req, res) => {
         d.phone_home, d.locality, d.marital_status, d.notify_sms ? 1 : 0, d.notify_email ? 1 : 0,
         d.group_name, d.social_relationship, d.social_name, d.employment_status, d.employer_name, 
         d.income_group, 
-        d.GroupID || null 
+        d.GroupID || null ,
+        d.Location || null
+        
     ];
 
     db.query(sql, values, (err, result) => {
@@ -2515,46 +2517,28 @@ app.post('/api/elements/add', (req, res) => {
 
 //76
 app.delete('/api/delete-test/:id', async (req, res) => {
-    // 'id' from req.params is actually the ElementID
-    const elementId = req.params.id;
-
+    const billingId = req.params.id; // This is '311' from your screenshot
+    
     try {
-        // 1. Find the ParentTestID so we can update the status later
-        // Note: Using ElementID and ParentTestID to match your MariaDB table
-        const [elementData] = await db.promise().query(
-            "SELECT ParentTestID FROM testelements WHERE ElementID = ?", 
-            [elementId]
+        // 1. First, check if the record exists in the billing table
+        const [record] = await db.promise().query(
+            "SELECT id FROM patient_billing_details WHERE id = ?", 
+            [billingId]
         );
 
-        if (elementData.length === 0) {
-            return res.status(404).json({ success: false, message: "Record not found" });
+        if (record.length === 0) {
+            return res.status(404).json({ success: false, message: "Billing record not found" });
         }
 
-        const parentTestId = elementData[0].ParentTestID;
-
-        // 2. Delete the element from testelements
+        // 2. Perform the deletion
         await db.promise().query(
-            "DELETE FROM testelements WHERE ElementID = ?", 
-            [elementId]
-        );
-
-        // 3. Count remaining elements for this ParentTest
-        const [countResult] = await db.promise().query(
-            "SELECT COUNT(*) as count FROM testelements WHERE ParentTestID = ?", 
-            [parentTestId]
-        );
-        const count = countResult[0].count;
-
-        // 4. Update the parent test status in the 'tests' table
-        const status = count > 1 ? 'Yes' : 'No'; 
-        await db.promise().query(
-            "UPDATE tests SET multipleComponents = ? WHERE TestID = ?", 
-            [status, parentTestId]
+            "DELETE FROM patient_billing_details WHERE id = ?", 
+            [billingId]
         );
 
         res.status(200).json({ 
             success: true, 
-            message: "Deleted successfully and parent updated" 
+            message: "Test removed from billing successfully" 
         });
 
     } catch (err) {
@@ -2564,6 +2548,7 @@ app.delete('/api/delete-test/:id', async (req, res) => {
 });
 
 //77
+
 app.get('/api/parent-tests', (req, res) => {
     // Added TestCode to the SELECT statement
     const sql = "SELECT TestID, TestName, TestCode FROM tests ORDER BY TestName ASC";
@@ -3842,9 +3827,8 @@ app.post('/api/save-billing', async (req, res) => {
 
             const actualId = record.id || record.TestID || record.profile_id;
 
-            // --- FIX: RESOLVE CLIENT ID TO CLIENT CODE STRING ---
+            // --- FIX 1: CLIENT CODE LOOKUP ---
             let finalClientCode = record.client_code;
-            // Lookup the string "ASHA-490" from the table "client_codes" using the ID "19"
             if (record.client_code && !isNaN(record.client_code)) {
                 const [clientResult] = await connection.query(
                     "SELECT client_code FROM client_codes WHERE id = ?", 
@@ -3855,9 +3839,15 @@ app.post('/api/save-billing', async (req, res) => {
                 }
             }
 
+            // --- FIX 2: SQL QUERY ALIGNMENT (27 Columns Total) ---
             const insertSql = `INSERT INTO patient_billing_details 
-                (PatientID, TestID, profile_id, Status, Amount, billing_type, location_code, doctor_id, amount_paid, payment_modes, invoice_no, sample_id, patient_name, balance, collected_at_id, client_code, group_name, insurance_payer, policy_number, hospital_name, bill_date, payment_date) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)`;
+                (PatientID, TestID, profile_id, Status, Amount, billing_type, 
+                location_code, doctor_id, amount_paid, payment_modes, invoice_no, 
+                sample_id, patient_name, balance, collected_at_id, client_code, 
+                group_name, insurance_payer, policy_number, hospital_name, 
+                acc_holder, acc_no, cheque_no, bank_name, trans_id, digital_mode,
+                bill_date, payment_date) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)`;
 
             if (isProfile) {
                 // Profile Logic
@@ -3866,8 +3856,7 @@ app.post('/api/save-billing', async (req, res) => {
                     [actualId]
                 );
 
-                for (let i = 0; i < mappedTests.length; i++) {
-                    const test = mappedTests[i];
+                for (const test of mappedTests) {
                     const [testData] = await connection.query("SELECT Price FROM tests WHERE TestID = ?", [test.test_id]);
                     const individualPrice = testData.length > 0 ? parseFloat(testData[0].Price) : 0;
 
@@ -3883,12 +3872,15 @@ app.post('/api/save-billing', async (req, res) => {
                     const balanceToSave = individualPrice - paidToSave;
                     const paymentDate = (paidToSave > 0) ? new Date() : null;
 
+                    // --- FIX 3: MATCH PARAMETERS TO COLUMNS ---
                     await connection.query(insertSql, [
-                        record.PatientID, test.test_id, actualId, record.Status || 'Approved', 
+                        record.PatientID, test.test_id, actualId, record.Status, 
                         individualPrice, record.billing_type, record.location_code, record.doctor_id, 
                         paidToSave, record.payment_modes, invoice_no, sample_id, record.patient_name, 
                         balanceToSave, record.collected_at_id, finalClientCode, record.group_name, 
-                        record.insurance_payer, record.policy_no, record.hospital_name, paymentDate
+                        record.insurance_payer, record.policy_no, record.hospital_name,
+                        record.acc_holder, record.acc_no, record.cheque_no, record.bank_name, record.trans_id, record.digital_mode,
+                        paymentDate
                     ]);
                 }
             } else {
@@ -3907,13 +3899,16 @@ app.post('/api/save-billing', async (req, res) => {
                 const balanceToSave = testPrice - paidToSave;
                 const paymentDate = (paidToSave > 0) ? new Date() : null;
 
+                // --- FIX 4: MATCH PARAMETERS TO COLUMNS ---
                 await connection.query(insertSql, [
-                    record.PatientID, actualId, null, record.Status || 'Approved', 
+                    record.PatientID, actualId, null, record.Status, 
                     testPrice, record.billing_type, record.location_code, record.doctor_id, 
                     paidToSave, record.payment_modes, invoice_no, sample_id, 
                     record.patient_name, balanceToSave, record.collected_at_id, 
                     finalClientCode, record.group_name, record.insurance_payer, 
-                    record.policy_no, record.hospital_name, paymentDate
+                    record.policy_no, record.hospital_name,
+                    record.acc_holder, record.acc_no, record.cheque_no, record.bank_name, record.trans_id, record.digital_mode,
+                    paymentDate
                 ]);
             }
         }
@@ -3921,11 +3916,11 @@ app.post('/api/save-billing', async (req, res) => {
         await connection.commit();
         res.json({ success: true, invoice_no });
     } catch (err) {
-        await connection.rollback();
+        if (connection) await connection.rollback();
         console.error("Save Billing Error:", err);
-        res.status(500).json({ success: false, error: "Database error" });
+        res.status(500).json({ success: false, error: "Database error: " + err.message });
     } finally {
-        connection.release();
+        if (connection) connection.release();
     }
 });
 
@@ -4005,8 +4000,9 @@ app.post('/api/save-group-billing', async (req, res) => {
     const { 
         PatientID, patient_name, doctor_id, amount, amount_paid, 
         payment_modes, group_name, client_code, billing_type,
-        TestID, test_id, profile_id, ProfileID, collected_at_id, location_id,
-        insurance_payer, policy_no, hospital_name // Added for consistency
+        TestID, test_id, profile_id, ProfileID, collected_at_id, 
+        location_id, locationCode, // Incoming string code (e.g., 'MYL001')
+        test_names, insurance_payer, policy_no, hospital_name 
     } = req.body;
 
     const connection = await db.promise().getConnection();
@@ -4014,7 +4010,14 @@ app.post('/api/save-group-billing', async (req, res) => {
     try {
         await connection.beginTransaction();
 
-        // 1. Resolve Profile ID if it's a code
+        // 1. Sync the Patient's master record with the current location code
+        if (PatientID && locationCode) {
+            await connection.query(
+                "UPDATE patients SET Location = ? WHERE PatientID = ?", 
+                [locationCode, PatientID]
+            );
+        }
+
         let finalProfileId = profile_id || ProfileID || null;
         if (finalProfileId && finalProfileId > 100) {
             const [rows] = await connection.query(
@@ -4024,19 +4027,19 @@ app.post('/api/save-group-billing', async (req, res) => {
             if (rows.length > 0) finalProfileId = rows[0].id;
         }
 
-        // 2. Generate common identifiers
+        // 3. Generate common identifiers
         const invoice_no = 'INV-' + Date.now();
         const sample_id = 'SMP-' + Math.floor(1000 + Math.random() * 9000);
         let remainingPayment = parseFloat(amount_paid || 0);
 
+        // Updated SQL: explicitly using location_code column
         const insertSql = `INSERT INTO patient_billing_details 
             (PatientID, TestID, profile_id, Status, Amount, billing_type, doctor_id, 
              amount_paid, payment_modes, invoice_no, sample_id, patient_name, balance, 
-             collected_at_id, client_code, group_name, insurance_payer, policy_number, 
-             hospital_name, bill_date, payment_date) 
-            VALUES (?, ?, ?, 'Approved', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)`;
+             collected_at_id, location_code, client_code, group_name, insurance_payer, 
+             policy_number, hospital_name, test_names, bill_date, payment_date) 
+            VALUES (?, ?, ?, 'Approved', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)`;
 
-        // 3. Determine if we are billing a Profile or a Single Test
         const isProfile = !!finalProfileId;
         const actualTestId = TestID || test_id || null;
 
@@ -4067,7 +4070,8 @@ app.post('/api/save-group-billing', async (req, res) => {
                     PatientID, test.test_id, finalProfileId, individualPrice, billing_type, 
                     doctor_id || 0, paidToSave, payment_modes, invoice_no, sample_id, 
                     patient_name, balanceToSave, collected_at_id || location_id, 
-                    client_code, group_name, insurance_payer, policy_no, hospital_name, paymentDate
+                    locationCode, client_code, group_name, insurance_payer, policy_no, 
+                    hospital_name, test_names, paymentDate
                 ]);
             }
         } else {
@@ -4081,7 +4085,8 @@ app.post('/api/save-group-billing', async (req, res) => {
                 PatientID, actualTestId, null, totalAmount, billing_type, 
                 doctor_id || 0, paidToSave, payment_modes, invoice_no, sample_id, 
                 patient_name, balanceToSave, collected_at_id || location_id, 
-                client_code, group_name, insurance_payer, policy_no, hospital_name, paymentDate
+                locationCode, client_code, group_name, insurance_payer, policy_no, 
+                hospital_name, test_names, paymentDate
             ]);
         }
 
@@ -4091,7 +4096,7 @@ app.post('/api/save-group-billing', async (req, res) => {
     } catch (err) {
         await connection.rollback();
         console.error("Group Billing Error:", err);
-        res.status(500).json({ success: false, error: "Database transaction failed" });
+        res.status(500).json({ success: false, error: err.message || "Database transaction failed" });
     } finally {
         connection.release();
     }
@@ -4389,8 +4394,8 @@ app.post('/api/approve-test', (req, res) => {
     const { patientId, sampleId, results, userRole } = req.body; // Pass userRole from frontend
 
     // Secure check: Prevent Admins from bypassing the UI
-    if (userRole === 'Admin') {
-        return res.status(403).json({ success: false, message: "Admins are not authorized to approve clinical results." });
+    if (userRole === 'Lab') {
+        return res.status(403).json({ success: false, message: "Lab staff are not authorized to approve clinical results." });
     }
 
     if (!results || results.length === 0) {
@@ -5219,21 +5224,28 @@ app.get('/api/notifications/unread', (req, res) => {
     let { doctorName } = req.query;
     if (!doctorName) return res.status(400).json({ success: false, message: "Name required" });
 
-    const nameWithDr = doctorName.startsWith('Dr.') ? doctorName : `Dr.${doctorName}`;
-    const nameWithoutDr = doctorName.replace('Dr.', '');
+    // 1. Clean the input: Remove "Dr." prefix and any leading/trailing spaces
+    // This turns "Dr. Deepa" or "Deepa" into just "Deepa"
+    const coreName = doctorName.replace(/^Dr\.?\s*/i, '').trim();
 
     const selectSql = `
         SELECT 
             n.*, 
-            p.patient_name  -- <--- Add this line to include the name
+            p.patient_name 
         FROM critical_notifications n
         JOIN patient_billing_details p ON n.sample_id = p.sample_id
         JOIN doctor_details d ON p.doctor_id = d.id
         WHERE n.is_read = FALSE 
-        AND (d.doctor_name = ? OR d.doctor_name = ?)
+        AND (
+            d.doctor_name LIKE ? -- Matches "Dr. Deepa", "Deepa", etc.
+            OR d.doctor_name = ?   -- Fallback for exact match
+        )
     `;
 
-    db.query(selectSql, [nameWithDr, nameWithoutDr], (err, results) => {
+    // Use wildcards to find the name regardless of "Dr." or "Dr. " prefixes
+    const searchParam = `%${coreName}%`;
+
+    db.query(selectSql, [searchParam, doctorName], (err, results) => {
         if (err) {
             console.error("SQL Error:", err);
             return res.status(500).json({ success: false });
@@ -5274,6 +5286,29 @@ app.post('/api/notifications/mark-read/:id', (req, res) => {
         res.json({ success: true });
     });
 });
+
+//163
+// DELETE a specific template by testId
+app.delete('/api/delete-template/:testId', (req, res) => {
+    const { testId } = req.params;
+
+    const sql = "DELETE FROM test_templates WHERE test_id = ?";
+
+    db.query(sql, [testId], (err, result) => {
+        if (err) {
+            console.error("Database error:", err);
+            return res.status(500).json({ success: false, message: "Server error" });
+        }
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ success: false, message: "Template not found" });
+        }
+
+        res.json({ success: true, message: "Template deleted successfully" });
+    });
+});
+
+
 
 const PORT = 5000;
 app.listen(PORT, () => console.log(`Backend running on port ${PORT}`));

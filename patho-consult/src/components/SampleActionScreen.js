@@ -68,16 +68,22 @@ useEffect(() => {
       const status = (test.status || "").toLowerCase().trim();
       const val = test.ResultValue || "N/A";
       const testName = test.test_name;
+      
+      // Target path: where the doctor should go when clicking the alert
+      const targetPath = `/sample-action-screen/${sampleId}`;
+
       if (comment.includes('very') || status.includes('very')) {
         addNotification(
-          `🚨 CRITICAL: ${patientData.patient_name} - ${testName} is ${val} (${test.LabComments})`, 
-          'critical'
+          `CRITICAL: ${patientData.patient_name} - ${testName} is ${val} (${test.LabComments})`, 
+          'critical',
+          targetPath // Added target
         );
       } 
       else if (['high', 'low'].includes(comment) || ['high', 'low'].includes(status)) {
         addNotification(
-          `⚠️ URGENT: ${testName} for ${patientData.patient_name} is ${val}`, 
-          'pending'
+          `URGENT: ${testName} for ${patientData.patient_name} is ${val}`, 
+          'pending',
+          targetPath // Added target
         );
       }
     });

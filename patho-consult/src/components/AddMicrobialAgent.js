@@ -271,15 +271,12 @@ const handleDelete = async (id) => {
                         <DataGrid
     rows={agentList}
     columns={columns}
-    // This prop shows the filter row under the headers
     showColumnFilters={true} 
     slotProps={{
-        // This ensures the filter panel stays visible or accessible
         filterPanel: { disableAddFilterButton: true }
     }}
     sx={{
         border: 'none',
-        // Styling the filter row to look better
         '& .MuiDataGrid-filterForm': { p: 1 },
         '& .MuiDataGrid-columnHeaders': {
             bgcolor: '#f3e5f5',
@@ -292,13 +289,12 @@ const handleDelete = async (id) => {
         }
     }}
 />
-                    </Box>
+            </Box>
                 </Paper>
             </Box>
 
 {/* Footer */}
-            <Box sx={{ 
-                mt: 'auto', p: 1.5, bgcolor: '#4a148c', color: 'rgba(255,255,255,0.8)', 
+            <Box sx={{mt: 'auto', p: 1.5, bgcolor: '#4a148c', color: 'rgba(255,255,255,0.8)', 
                 display: 'flex', justifyContent: 'center', gap: 4
             }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -312,7 +308,7 @@ const handleDelete = async (id) => {
             </Box>
             {/* Edit Dialog */}
             <Dialog open={isEditOpen} onClose={() => setIsEditOpen(false)} PaperProps={{ sx: { border: '2px solid #4a148c', borderRadius: 2 } }}>
-                <DialogTitle sx={{ bgcolor: '#4a148c', color: 'white', fontWeight: 'bold' }}>Update Microbial Agent</DialogTitle>
+            <DialogTitle sx={{ bgcolor: '#4a148c', color: 'white', fontWeight: 'bold' }}>Update Microbial Agent</DialogTitle>
                 <DialogContent sx={{ pt: 3, display: 'flex', flexDirection: 'column', gap: 2, minWidth: 400 }}>
                     <Box sx={{ mt: 2 }}>
                         <Typography variant="caption" fontWeight="bold">Agent Name</Typography>

@@ -13,14 +13,12 @@ import {Search, Home, Mail, MapPin } from 'lucide-react';
 const AddTestToSample = () => {
     const { sampleId } = useParams();
     const navigate = useNavigate();
-    
     const [data, setData] = useState(null);
     const [availableTests, setAvailableTests] = useState([]);
     const [selectedTest, setSelectedTest] = useState(null);
     const [loading, setLoading] = useState(true);
-
     const [page, setPage] = useState(0);
-const [rowsPerPage, setRowsPerPage] = useState(5);
+    const [rowsPerPage, setRowsPerPage] = useState(5);
 
 const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -99,11 +97,7 @@ const handleAddTest = async () => {
 
         if (result.success) {
             Toast.fire({ icon: 'success', title: 'Test added successfully' });
-            
-            
             setSelectedTest(null); 
-            
-            
             if (typeof fetchAllData === 'function') {
                 fetchAllData(); 
             }
@@ -125,7 +119,7 @@ const handleAddTest = async () => {
            <Box 
                            component="header" 
                            sx={{ 
-                               p: 1.5, // Back to original slim padding
+                               p: 1.5,
                                bgcolor: '#4a148c', 
                                color: 'white', 
                                display: 'flex', 
@@ -143,12 +137,9 @@ const handleAddTest = async () => {
                            </Typography>
                        
                            {/* Home Icon - Now Positioned to the RIGHT and visible */}
-                            <IconButton 
-                                                   onClick={() => navigate('/home')} 
-                                                   sx={{ position: 'absolute', right: 36, top: 3, color: 'white' }}
-                                               >
-                                                   <HomeIcon fontSize="large" />
-                                               </IconButton>
+                            <IconButton onClick={() => navigate('/home')} sx={{ position: 'absolute', right: 36, top: 3, color: 'white' }}>
+                                <HomeIcon fontSize="large" />
+                            </IconButton>
                        </Box>
             <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', alignItems: 'center',mt: 5 }}>
                 
@@ -173,11 +164,9 @@ const handleAddTest = async () => {
     fullWidth
     size="small"
     options={availableTests || []} 
-    // Match these keys to your SQL aliases
     getOptionLabel={(opt) => `${opt.name} (ID: ${opt.id}) - ₹${opt.amount}`}
     value={selectedTest}
     onChange={(e, val) => setSelectedTest(val)}
-    // This allows searching by both Name and ID
     isOptionEqualToValue={(option, value) => option.id === value.id}
     renderInput={(params) => (
         <TextField 

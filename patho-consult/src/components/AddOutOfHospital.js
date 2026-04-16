@@ -171,7 +171,6 @@ const requestSort = (key) => {
         const data = await res.json();
         
         if (data.success) {
-            // 3. Update local states
             setSavedClientId(data.clientId);
             
             const hospRes = await fetch('http://localhost:5000/api/get-out-hospitals').then(r => r.json());
